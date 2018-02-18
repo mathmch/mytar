@@ -1,5 +1,4 @@
 #include "dirnode.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <dirent.h>
@@ -48,13 +47,13 @@ void print_tree(dirnode *tree, char *path_array[], int depth) {
   
     path_array[depth++] = tree->name;
     for(i = 0; i < depth; i++){
-      length = strlen(path_array[i]);
-      fwrite(path_array[i], length, 1, stdout);
-      printf("/");
+	length = strlen(path_array[i]);
+	fwrite(path_array[i], length, 1, stdout);
+	printf("/");
     }
     printf("\n");
     for (i = 0; i < tree->child_count; i++) {
-      print_tree(tree->children[i], path_array, depth);
+	print_tree(tree->children[i], path_array, depth);
     }
     
 }
