@@ -13,6 +13,6 @@ struct dirnode {
 
 dirnode *build_tree(char *path);
 
-void print_tree(dirnode *tree, char *path);
+void print_tree(dirnode *tree, char *path_array[], int depth);
 
 #endif /* dirnode_h */

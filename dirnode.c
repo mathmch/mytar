@@ -11,7 +11,7 @@ dirnode *build_tree(char *path) {
     #define FN_NAME "build_tree"
     struct stat sb;
     dirnode *tree = safe_malloc(sizeof(struct dirnode), FN_NAME);
-
+  
     if (lstat(path, &sb)) {
         perror(path);
         exit(EXIT_FAILURE);
@@ -39,18 +39,22 @@ dirnode *build_tree(char *path) {
     return tree;
 }
 
-void print_tree(dirnode *tree, char *path) {
+/* only problem is this function puts / at the end of every path, even if
+   final spot is a file, not a dir. */
+void print_tree(dirnode *tree, char *path_array[], int depth) {
     char *new_path;
+    int length;
     int i;
-    if (path == NULL) {
-        new_path = tree->name;
-    } else {
-        new_path = strcat(path, "/");
-        new_path = strcat(new_path, tree->name);
+  
+    path_array[depth++] = tree->name;
+    for(i = 0; i < depth; i++){
+      length = strlen(path_array[i]);
+      fwrite(path_array[i], length, 1, stdout);
+      printf("/");
     }
-
-    printf("%s\n", new_path);
+    printf("\n");
     for (i = 0; i < tree->child_count; i++) {
-        print_tree(tree->children[i], new_path);
+      print_tree(tree->children[i], path_array, depth);
     }
+    
 }
