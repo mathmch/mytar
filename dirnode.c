@@ -6,17 +6,19 @@
 #include <string.h>
 #include "util.h"
 
-dirnode *build_tree(char *path) {
+dirnode *build_tree(char *path, char *prefix) {
     #define FN_NAME "build_tree"
     struct stat sb;
+    char *new_path;
     dirnode *tree = safe_malloc(sizeof(struct dirnode), FN_NAME);
-  
+
     if (lstat(path, &sb)) {
         perror(path);
         exit(EXIT_FAILURE);
     }
 
-    tree->name = path;
+    new_path = concat(prefix, "/", path);
+    strcpy(tree->path_name, new_path);
     tree->sb = sb;
     tree->children = NULL;
     tree->child_count = 0;
@@ -30,9 +32,12 @@ dirnode *build_tree(char *path) {
                 continue;
             tree->child_count++;
             tree->children = safe_realloc(tree->children, tree->child_count * sizeof(dirnode*), FN_NAME);
-            tree->children[tree->child_count - 1] = build_tree(entry->d_name);
+            tree->children[tree->child_count - 1] = build_tree(entry->d_name, new_path);
         }
         chdir("..");
+
+        /* directory, so add a slash to the path name end after recursing */
+        strcat(tree->path_name, "/");
     }
 
     return tree;
@@ -40,19 +45,10 @@ dirnode *build_tree(char *path) {
 
 /* only problem is this function puts / at the end of every path, even if
    final spot is a file, not a dir. */
-void print_tree(dirnode *tree, char *path_array[], int depth) {
-    char *new_path;
-    int length;
+void print_tree(dirnode *tree) {
     int i;
-
-    path_array[depth++] = tree->name;
-    for(i = 0; i < depth; i++){
-        length = strlen(path_array[i]);
-        fwrite(path_array[i], length, 1, stdout);
-        printf("/");
-    }
-    printf("\n");
+    puts(tree->path_name);
     for (i = 0; i < tree->child_count; i++) {
-        print_tree(tree->children[i], path_array, depth);
+        print_tree(tree->children[i]);
     }
 }
