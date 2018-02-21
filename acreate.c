@@ -2,37 +2,38 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
 #include "dirnode.h"
 #include "util.h"
 #include "acreate.h"
 
-#define PATH_LENGTH 256
+#define PATH_MAX 256
 #define BLOCK_SIZE 512
 
 void write_header(char *file_name, dirnode *tree) {
-#define NAME_FIELD_LENGTH 100
-#define MODE_FIELD_LENGTH 8
-#define UID_FIELD_LENGTH 8
-#define GID_FIELD_LENGTH 8
-#define SIZE_FIELD_LENGTH 12
-#define MTIME_FIELD_LENGTH 12
-#define CHKSUM_FIELD_LENGTH 8
-#define CHKSUM_START_OFFSET 148
-#define TYPEFLAG_FIELD_LENGTH 1
-#define LINKNAME_FIELD_LENGTH 100
-#define MAGIC "ustar"
-#define MAGIC_FIELD_LENGTH 6
-#define VERSION "00"
-#define VERSION_FIELD_LENGTH 2
-#define UNAME_FIELD_LENGTH 32
-#define GNAME_FIELD_LENGTH 32
-#define DEVMAJOR_FIELD_LENGTH 8
-#define DEVMINOR_FIELD_LENGTH 8
-#define PREFIX_FIELD_LENGTH 155
-#define MAX_FIELD_LENGTH 155
-#define HEADER_LENGTH 500
+    #define NAME_FIELD_LENGTH 100
+    #define MODE_FIELD_LENGTH 8
+    #define UID_FIELD_LENGTH 8
+    #define GID_FIELD_LENGTH 8
+    #define SIZE_FIELD_LENGTH 12
+    #define MTIME_FIELD_LENGTH 12
+    #define CHKSUM_FIELD_LENGTH 8
+    #define CHKSUM_START_OFFSET 148
+    #define TYPEFLAG_FIELD_LENGTH 1
+    #define LINKNAME_FIELD_LENGTH 100
+    #define MAGIC "ustar"
+    #define MAGIC_FIELD_LENGTH 6
+    #define VERSION "00"
+    #define VERSION_FIELD_LENGTH 2
+    #define UNAME_FIELD_LENGTH 32
+    #define GNAME_FIELD_LENGTH 32
+    #define DEVMAJOR_FIELD_LENGTH 8
+    #define DEVMINOR_FIELD_LENGTH 8
+    #define PREFIX_FIELD_LENGTH 155
+    #define MAX_FIELD_LENGTH 155
+    #define HEADER_LENGTH 500
 
     FILE *file;
     unsigned long length;
@@ -42,16 +43,19 @@ void write_header(char *file_name, dirnode *tree) {
     int i;
 
     if ((file = fopen(file_name, "w+")) == NULL) {
-        perror("TESTING");
         return;
     }
 
     memset(buffer, 0, HEADER_LENGTH);
 
     /* name */
-    length = strlen(file_name);
-    fwrite(file_name, 1, length, file);
-    fwrite(buffer, 1, NAME_FIELD_LENGTH - length, file);
+    length = strlen(tree->path_name);
+    if (length < NAME_FIELD_LENGTH) {
+        fwrite(tree->path_name, 1, length, file);
+        fwrite(buffer, 1, NAME_FIELD_LENGTH - length, file);
+    } else {
+        
+    }
 
     /* mode */
     sprintf(buffer, "%o", tree->sb.st_mode);
@@ -74,9 +78,7 @@ void write_header(char *file_name, dirnode *tree) {
     fwrite(buffer, 1, MTIME_FIELD_LENGTH, file);
 
     /* chksum */
-    for (i = 0; i < 8; i++) {
-        buffer[i] = ' ';
-    }
+    memset(buffer, ' ', CHKSUM_FIELD_LENGTH);
     fwrite(buffer, 1, CHKSUM_FIELD_LENGTH, file);
 
     /* typeflag */
@@ -90,9 +92,18 @@ void write_header(char *file_name, dirnode *tree) {
     }
     fwrite(buffer, 1, TYPEFLAG_FIELD_LENGTH, file);
 
-    /* TODO: linkname */
-    memset(buffer, 15, LINKNAME_FIELD_LENGTH);
-    fwrite(buffer, 1, LINKNAME_FIELD_LENGTH, file);
+    /* linkname */
+    if (S_ISLNK(tree->sb.st_mode)) {
+        length = readlink(tree->path_name, buffer, LINKNAME_FIELD_LENGTH);
+        fwrite(buffer, 1, length, file);
+        if (length < LINKNAME_FIELD_LENGTH) {
+            memset(buffer, 0, LINKNAME_FIELD_LENGTH - length);
+            fwrite(buffer, 1, LINKNAME_FIELD_LENGTH - length, file);
+        }
+    } else {
+        memset(buffer, 0, LINKNAME_FIELD_LENGTH);
+        fwrite(buffer, 1, LINKNAME_FIELD_LENGTH, file);
+    }
 
     /* magic */
     fwrite(MAGIC, 1, MAGIC_FIELD_LENGTH, file);
@@ -135,7 +146,7 @@ void write_header(char *file_name, dirnode *tree) {
     fwrite(buffer, 1, DEVMAJOR_FIELD_LENGTH, file);
 
     /* TODO: prefix */
-    memset(buffer, 15, PREFIX_FIELD_LENGTH);
+    memset(buffer, 0xFF, PREFIX_FIELD_LENGTH);
     fwrite(buffer, 1, PREFIX_FIELD_LENGTH, file);
 
     /* checksum calculation and write */
@@ -153,6 +164,3 @@ void write_header(char *file_name, dirnode *tree) {
     memset(buffer, 0, BLOCK_SIZE - HEADER_LENGTH);
     fwrite(buffer, 1, BLOCK_SIZE - HEADER_LENGTH, file);
 }
-
-
-

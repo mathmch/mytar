@@ -44,9 +44,8 @@ int execute_command(int argc, char *argv[]){
             /* use strict */
         }
         /* no flags */
-        dirnode *tree = build_tree(argv[3]);
-        char *path_array[30]; /*temp array size for tests */
-        print_tree(tree, path_array, 0);
+        dirnode *tree = build_tree(argv[3], NULL);
+        print_tree(tree);
         write_header(argv[2], tree);
     }
     

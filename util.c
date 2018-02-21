@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* malloc or exit with the message upon failure */
 void *safe_malloc(size_t size, const char *msg) {
@@ -31,5 +32,49 @@ void *safe_realloc(void *ptr, size_t size, const char *msg) {
         exit(EXIT_FAILURE);
     }
 
+    return new;
+}
+
+/* returns a newly malloced copy of the string */
+char *new_copy(char *str) {
+    unsigned long length;
+    char *copy;
+    if (str == NULL)
+        return NULL;
+    length = strlen(str);
+    copy = safe_malloc(length, "new_copy");
+    strcpy(copy, str);
+    return copy;
+}
+
+/* returns a new string from concatenating the three strings.
+ * if a string is null, it is ignored in the copy string.
+ * the result of this function must be freed later if it does not return null. */
+char *concat(char *str1, char *str2, char *str3) {
+    /* could use varargs here, but eh... */
+    #define STR_COUNT 3
+    char *strings[] = { str1, str2, str3 };
+    unsigned long lengths[STR_COUNT];
+    unsigned long total_length = 0;
+    char *new;
+    char *current;
+    int i;
+    
+    for (i = 0; i < STR_COUNT; i++) {
+        unsigned long length = (strings[i] == NULL) ? 0 : strlen(strings[i]);
+        lengths[i] = length;
+        total_length += length;
+    }
+
+    new = safe_malloc(total_length + 1, "concat");
+    current = new;
+    for (i = 0; i < STR_COUNT; i++) {
+        if (strings[i] == NULL)
+            continue;
+        strcpy(current, strings[i]);
+        current += lengths[i];
+    }
+
+    new[total_length] = '\0';
     return new;
 }
