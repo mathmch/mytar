@@ -50,6 +50,10 @@ void archive(char *file_name, dirnode *tree) {
 
 void archive_helper(FILE *file, dirnode *tree) {
     int i;
+    if (!S_ISREG(tree->sb.st_mode) && !S_ISDIR(tree->sb.st_mode) && !S_ISLNK(tree->sb.st_mode)) {
+        fprintf(stderr, "error: %s: unsupported file type", tree->path_name);
+        return;
+    }
     write_header(file, tree);
     write_contents(file, tree);
     for (i = 0; i < tree->child_count; i++)
@@ -70,24 +74,24 @@ void write_header(FILE *archive, dirnode *tree) {
         return; /* TODO: handle the error here some how? */
     write_and_pad(buffer, NAME_FIELD_LENGTH, archive);
 
-    /* mode */
-    sprintf(buffer, "%o", tree->sb.st_mode);
+    /* mode, masked to ignore unimportant bits */
+    sprintf(buffer, "%07o", tree->sb.st_mode & 07777);
     write_and_pad(buffer, MODE_FIELD_LENGTH, archive);
 
     /* uid */
-    sprintf(buffer, "%o", tree->sb.st_uid);
+    sprintf(buffer, "%07o", (int)tree->sb.st_uid);
     write_and_pad(buffer, UID_FIELD_LENGTH, archive);
 
     /* gid */
-    sprintf(buffer, "%o", tree->sb.st_gid);
+    sprintf(buffer, "%07o", tree->sb.st_gid);
     write_and_pad(buffer, GID_FIELD_LENGTH, archive);
 
     /* size */
-    sprintf(buffer, "%llo", tree->sb.st_size);
+    sprintf(buffer, "%011o", (unsigned int)tree->sb.st_size);
     write_and_pad(buffer, SIZE_FIELD_LENGTH, archive);
 
     /* mtime */
-    sprintf(buffer, "%lo", tree->sb.st_mtime);
+    sprintf(buffer, "%011o", (unsigned int)tree->sb.st_mtime);
     write_and_pad(buffer, MTIME_FIELD_LENGTH, archive);
 
     /* chksum */
@@ -150,13 +154,17 @@ void write_header(FILE *archive, dirnode *tree) {
         fwrite(buffer, 1, UNAME_FIELD_LENGTH - length, archive);
     }
 
-    /* devmajor */
-    sprintf(buffer, "%o", major(tree->sb.st_dev));
-    write_and_pad(buffer, DEVMAJOR_FIELD_LENGTH, archive);
-
-    /* devminor */
-    sprintf(buffer, "%o", minor(tree->sb.st_dev));
-    write_and_pad(buffer, DEVMINOR_FIELD_LENGTH, archive);
+    /* devmajor and devminor */
+    if (S_ISCHR(tree->sb.st_mode) || S_ISBLK(tree->sb.st_mode)) {
+        sprintf(buffer, "%07o", major(tree->sb.st_dev));
+        write_and_pad(buffer, DEVMAJOR_FIELD_LENGTH, archive);
+        sprintf(buffer, "%07o", minor(tree->sb.st_dev));
+        write_and_pad(buffer, DEVMINOR_FIELD_LENGTH, archive);
+    } else {
+        buffer[0] = '\0';
+        write_and_pad(buffer, DEVMAJOR_FIELD_LENGTH, archive);
+        write_and_pad(buffer, DEVMINOR_FIELD_LENGTH, archive);
+    }
 
     /* prefix */
     write_and_pad(prefix, PREFIX_FIELD_LENGTH, archive);
@@ -168,7 +176,7 @@ void write_header(FILE *archive, dirnode *tree) {
         checksum += (unsigned char)buffer[i];
     }
     fseek(archive, -(HEADER_LENGTH - CHKSUM_START_OFFSET), SEEK_CUR);
-    sprintf(buffer, "%o", checksum);
+    sprintf(buffer, "%07o", checksum);
     fwrite(buffer, 1, CHKSUM_FIELD_LENGTH, archive);
 
     /* null padding of header block */

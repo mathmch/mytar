@@ -22,6 +22,7 @@ dirnode *build_tree(char *path, char *prefix) {
     } else {
         new_path = concat(prefix, "/", path);
     }
+
     strcpy(tree->path_name, new_path);
     tree->sb = sb;
     tree->children = NULL;
@@ -51,6 +52,10 @@ dirnode *build_tree(char *path, char *prefix) {
    final spot is a file, not a dir. */
 void print_tree(dirnode *tree) {
     int i;
+    if (!S_ISREG(tree->sb.st_mode) && !S_ISDIR(tree->sb.st_mode) && !S_ISLNK(tree->sb.st_mode)) {
+        /* unsupported file type, does not go in the archive */
+        return;
+    }
     puts(tree->path_name);
     for (i = 0; i < tree->child_count; i++) {
         print_tree(tree->children[i]);
