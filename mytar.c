@@ -212,7 +212,7 @@ void get_owner(uid_t uid, gid_t gid, char owner[]){
 }
 
 void get_time(time_t time, char timestr[]){
-    struct tm *tm = localtime(time);
+    struct tm *tm = localtime(&time);
     int year;
     int month;
     int day;
