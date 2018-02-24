@@ -10,8 +10,8 @@
 
 void validate_command(int argc, char *argv[]);
 int execute_command(int argc, char *argv[]);
-void list_contents(FILE* tarfile, int mode);
-void get_permissions(char permissions[]);
+void list_contents(FILE* tarfile, int verbose);
+void get_permissions(char permissions[], mode_t mode);
 void get_owner(uid_t uid, gid_t gid, char owner[]);
 void get_time(time_t time, char timestr[]);
 
@@ -25,7 +25,7 @@ void validate_command(int argc, char *argv[]){
     int length;
     int i;
     if(argc < 3){
-        printf("mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+        printf("Usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
         exit(EXIT_FAILURE);
     }
     length = strlen(argv[1]);
@@ -33,7 +33,7 @@ void validate_command(int argc, char *argv[]){
         if(argv[1][i] != 'c' && argv[1][i] != 't' &&
            argv[1][i] != 'x' && argv[1][i] != 'v' &&
            argv[1][i] != 'f' && argv[1][i] != 'S'){
-            printf("mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+            printf("Usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
             exit(EXIT_FAILURE);
         }
     }
@@ -46,21 +46,26 @@ int execute_command(int argc, char *argv[]){
     if(strstr(argv[1], "c")){
 	if((tarfile = fopen(argv[2], "w")) == NULL)
 	    perror("Opening Tarfile");
+	dirnode *tree = build_tree(argv[3], NULL);
         /* create archive */
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
+	    archive(argv[2], tree);
+	     print_tree(tree);
         }
         else if(strstr(argv[1], "v")){
             /* use verbose */
+	    archive(argv[2], tree);
+	     print_tree(tree);
+	    
         }
         else if(strstr(argv[1], "S")){
             /* use strict */
+	    archive(argv[2], tree);
 	}
 	else{
 	    /* no flags */
-	    dirnode *tree = build_tree(argv[3], NULL);
-	    print_tree(tree);
-	    write_header(argv[2], tree);
+	    archive(argv[2], tree);
 	}
     }
     
@@ -82,7 +87,7 @@ int execute_command(int argc, char *argv[]){
 	}
     }
 
-    if(strstr(argv[1], "l")){
+    if(strstr(argv[1], "t")){
 	if((tarfile = fopen(argv[2], "r")) == NULL)
 	    perror("Opening Tarfile");
         /* list archive */
@@ -108,7 +113,8 @@ int execute_command(int argc, char *argv[]){
 
 /* mode = 0 for standard, verbose otherwise 
    TODO: Put it in a loop so it runs through all headers */
-void list_contents(FILE* tarfile, int mode){
+void list_contents(FILE* tarfile, int verbose){
+    #define HEADER_LENGTH 512
     #define PATH_MAX 256
     #define NAME_LENGTH 100
     #define SIZE_OFFSET 124
@@ -119,7 +125,7 @@ void list_contents(FILE* tarfile, int mode){
     #define EXTRA_SPACE 12
     #define PERMISSION_LENGTH 8
     #define PERMISSION_WIDTH 11
-    #define PERMISSION_OFFSET 110
+    #define PERMISSION_OFFSET 100
     #define OWNER_WIDTH 17
     #define UID_LENGTH 8
     #define GID_LENGTH 8
@@ -135,26 +141,32 @@ void list_contents(FILE* tarfile, int mode){
     char path[PATH_MAX];
     char buffer[NAME_LENGTH];
     char permissions[PERMISSION_WIDTH];
+    mode_t mode;
     buffer[0] = '\0';
     fread(buffer, 1, 1, tarfile);
     fseek(tarfile, -1, SEEK_CUR);
     while(buffer[0] != '\0'){
+	/* get permissions */
+	fseek(tarfile, PERMISSION_OFFSET, SEEK_CUR);
+	fread(buffer, 1, PERMISSION_LENGTH, tarfile);
+	mode = strtol(buffer, NULL, 8);
 	/* get size */
-	fseek(tarfile, SIZE_OFFSET, SEEK_CUR);
+	fseek(tarfile, SIZE_OFFSET - PERMISSION_OFFSET - PERMISSION_LENGTH, SEEK_CUR);
 	fread(buffer, 1, SIZE_LENGTH, tarfile);
 	size = strtol(buffer, NULL, 8);
 	/* get name */
-	fread(buffer, 1, -SIZE_OFFSET - SIZE_LENGTH, tarfile);
+	fseek(tarfile, - SIZE_OFFSET - SIZE_LENGTH, SEEK_CUR);
+	fread(buffer, 1, NAME_LENGTH, tarfile);
 	/* get prefix */
 	fseek(tarfile, PREFIX_OFFSET - NAME_LENGTH, SEEK_CUR);
 	fread(path, 1, PREFIX_LENGTH, tarfile);
 	/* make full path */
 	strcat(path, buffer);
-	if(mode){
+	if(verbose){
 	    /* verbose print */
-	    fseek(tarfile, PERMISSION_OFFSET - PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
+       	    fseek(tarfile, PERMISSION_OFFSET - PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
 	    fread(permissions, 1, PERMISSION_LENGTH, tarfile);
-	    get_permissions(permissions);
+	    get_permissions(permissions, mode);
 	
 	    fread(owner, 1, UID_LENGTH, tarfile);
 	    uid = strtol(owner, NULL, 8);
@@ -177,13 +189,15 @@ void list_contents(FILE* tarfile, int mode){
 	/* go to end of block */
 	fseek(tarfile, EXTRA_SPACE, SEEK_CUR);
 	/* go to next header */
-	fseek(tarfile, size + size%512, SEEK_CUR);
+	if(!S_ISDIR(mode) && size != 0){
+	fseek(tarfile, (size/HEADER_LENGTH)*HEADER_LENGTH + 512, SEEK_CUR);
+	}
 	fread(buffer, 1, 1, tarfile);
 	fseek(tarfile, -1, SEEK_CUR);
     }
 }
 
-void get_permissions(char permissions[]){
+void get_permissions(char permissions[], mode_t mode){
     #define TYPE 0
     #define U_R 1
     #define U_W 2
@@ -194,8 +208,6 @@ void get_permissions(char permissions[]){
     #define O_R 7
     #define O_W 8
     #define O_X 9
-    mode_t mode;
-    mode = strtol(permissions, NULL, 8);
     if(S_ISREG(mode))
 	permissions[TYPE] = '-';
     if(S_ISDIR(mode))
@@ -250,8 +262,8 @@ void get_time(time_t time, char timestr[]){
     int hour;
     int min;
     timestr[0] = '\0';
-    year = tm->tm_year + 1970;
-    month = tm->tm_mon;
+    year = tm->tm_year + 1900;
+    month = tm->tm_mon + 1;
     day = tm->tm_mday;
     hour = tm->tm_hour;
     min = tm->tm_min;
