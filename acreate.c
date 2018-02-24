@@ -229,7 +229,7 @@ void write_contents(FILE *archive, dirnode *tree) {
     }
 
     while ((length = fread(buffer, 1, BLOCK_SIZE, file)) > 0) {
-        write_and_pad(buffer, BLOCK_SIZE, archive);x
+        write_and_pad(buffer, BLOCK_SIZE, archive);
     }
 
     fclose(file);
