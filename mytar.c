@@ -40,21 +40,25 @@ void validate_command(int argc, char *argv[]){
 }
 
 int execute_command(int argc, char *argv[]){
+    #define SIMPLE 0
+    #define VERBOSE 1
     if(strstr(argv[1], "c")){
         /* create archive */
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
         }
-        if(strstr(argv[1], "v")){
+        else if(strstr(argv[1], "v")){
             /* use verbose */
         }
-        if(strstr(argv[1], "S")){
+        else if(strstr(argv[1], "S")){
             /* use strict */
-        }
-        /* no flags */
-	dirnode *tree = build_tree(argv[3], NULL);
-        print_tree(tree);
-        write_header(argv[2], tree);
+	}
+	else{
+	    /* no flags */
+	    dirnode *tree = build_tree(argv[3], NULL);
+	    print_tree(tree);
+	    write_header(argv[2], tree);
+	}
     }
     
     if(strstr(argv[1], "x")){
@@ -62,27 +66,35 @@ int execute_command(int argc, char *argv[]){
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
         }
-        if(strstr(argv[1], "v")){
+        else if(strstr(argv[1], "v")){
             /* use verbose */
         }
-        if(strstr(argv[1], "S")){
+        else if(strstr(argv[1], "S")){
             /* use strict */
         }
-        /* no flags */
+	else{
+	    /* no flags */
+	}
     }
 
     if(strstr(argv[1], "l")){
         /* list archive */
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
+	    list_contents(tarfile, VERBOSE);
         }
-        if(strstr(argv[1], "v")){
+        else if(strstr(argv[1], "v")){
             /* use verbose */
+	    list_contents(tarfile, VERBOSE);
         }
-        if(strstr(argv[1], "S")){
+        else if(strstr(argv[1], "S")){
             /* use strict */
+	    list_contents(tarfile, SIMPLE);
         }
-        /* no flags */
+	else{
+	    /* no flags */
+	    list_contents(tarfile, SIMPLE);
+	}
     }
     return 0;
 }
@@ -105,6 +117,7 @@ void list_contents(FILE* tarfile, int mode){
     #define UID_LENGTH 8
     #define GID_LENGTH 8
     #define TIME_LENGTH 12
+    #define TIME_OFFSET 136
     #define TIME_WIDTH 16
     int size;
     uid_t uid;
@@ -115,44 +128,52 @@ void list_contents(FILE* tarfile, int mode){
     char path[PATH_MAX];
     char buffer[NAME_LENGTH];
     char permissions[PERMISSION_WIDTH];
-    
+    buffer[0] = '\0';
+    fread(buffer, 1, 1, tarfile);
+    lseek(tarfile, -1, SEEK_CUR);
+    while(buffer[0] != '\0'){
+	/* get size */
+	fseek(tarfile, SIZE_OFFSET, SEEK_CUR);
+	fread(buffer, 1, SIZE_LENGTH, tarfile);
+	size = strtol(buffer, NULL, 8);
+	/* get name */
+	fread(buffer, 1, -SIZE_OFFSET - SIZE_LENGTH, tarfile);
+	/* get prefix */
+	fseek(tarfile, PREFIX_OFFSET - NAME_LENGTH, SEEK_CUR);
+	fread(path, 1, PREFIX_LENGTH, tarfile);
+	/* make full path */
+	strcat(path, buffer);
+	if(mode){
+	    /* verbose print */
+	    fseek(tarfile, PERMISSION_OFFSET - PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
+	    fread(permissions, 1, PERMISSION_LENGTH, tarfile);
+	    get_permissions(permissions);
+	
+	    fread(owner, 1, UID_LENGTH, tarfile);
+	    uid = strtol(owner, NULL, 8);
+	    fread(owner, 1, GID_LENGTH, tarfile);
+	    gid = strtol(owner, NULL, 8);
+	    get_owner(uid, gid, owner);
+	
+	    fseek(tarfile, SIZE_LENGTH, SEEK_CUR);
+	    fread(buffer, 1, TIME_LENGTH, tarfile);
+	    time = strtol(buffer, NULL, 8);
+	    get_time(time, timestr);
+	
+	    printf("%10s %17s %8d %16s %s\n", permissions, owner, size, timestr, path);
 
-    /* get size */
-    fseek(tarfile, SIZE_OFFSET, SEEK_CUR);
-    fread(buffer, 1, SIZE_LENGTH, tarfile);
-    size = strtol(buffer, NULL, 8);
-    /* get name */
-    fread(buffer, 1, -SIZE_OFFSET - SIZE_LENGTH, tarfile);
-    /* get prefix */
-    fseek(tarfile, PREFIX_OFFSET - NAME_LENGTH, SEEK_CUR);
-    fread(path, 1, PREFIX_LENGTH, tarfile);
-    /* make full path */
-    strcat(path, buffer);
-    if(mode){
-	/* verbose print */
-	fseek(tarfile, PERMISSION_OFFSET - PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
-	fread(permissions, 1, PERMISSION_LENGTH, tarfile);
-	get_permissions(permissions);
-	
-	fread(owner, 1, UID_LENGTH, tarfile);
-	uid = strtol(owner, NULL, 8);
-	fread(owner, 1, GID_LENGTH, tarfile);
-	gid = strtol(owner, NULL, 8);
-	get_owner(uid, gid, owner);
-	
-	fseek(tarfile, SIZE_LENGTH, SEEK_CUR);
-	fread(buffer, 1, TIME_LENGTH, tarfile);
-	time = strtol(buffer, NULL, 8);
-	get_time(time, timestr);
-	printf("%10s %17s %8d %16s %s\n", permissions, owner, size, timestr, path);
-    }else{
-	/* standard print */
-	puts(path);
+	    fseek(tarfile, PREFIX_OFFSET + PREFIX_LENGTH - TIME_OFFSET - TIME_LENGTH, SEEK_CUR); 
+	}else{
+	    /* standard print */
+	    puts(path);
+	}
+	/* go to end of block */
+	fseek(tarfile, EXTRA_SPACE, SEEK_CUR);
+	/* go to next header */
+	fseek(tarfile, size + size%512, SEEK_CUR);
+	fread(buffer, 1, 1, tarfile);
+	lseek(tarfile, -1, SEEK_CUR);
     }
-    /* go to end of block */
-    fseek(tarfile, EXTRA_SPACE, SEEK_CUR);
-    /* go to next header */
-    fseek(tarfile, size + size%512, SEEK_CUR);
 }
 
 void get_permissions(char permissions[]){
@@ -188,6 +209,7 @@ void get_permissions(char permissions[]){
 /* figure out how to handled name lengths */
 void get_owner(uid_t uid, gid_t gid, char owner[]){
     #define OWNER_WIDTH 17
+    #define MAX_NAME_LENGTH 8
     #define USER_NAME_LENGTH 32
     int i = 0;
     int length;
@@ -199,16 +221,19 @@ void get_owner(uid_t uid, gid_t gid, char owner[]){
 	sprintf(buffer, "%d", uid);
 	strcat(owner, buffer);
     }else{
-	/* FINISH */
+	snprintf(buffer, MAX_USER_NAME, "%s", pw->pw_name);
+	strcat(owner, buffer);
+	}
     }
     strcat(owner, "/");
     if((gr = getgrgid(gid)) == NULL){
 	sprintf(buffer, "%d", gid);
 	strcat(owner, buffer);
     }else{
-	/* FINISH */
+	snprintf(buffer, MAX_USER_NAME, "%s", gr->gr_name);
+	strcat(owner, buffer);
+	}
     }
-    
 }
 
 void get_time(time_t time, char timestr[]){
