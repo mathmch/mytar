@@ -42,7 +42,10 @@ void validate_command(int argc, char *argv[]){
 int execute_command(int argc, char *argv[]){
     #define SIMPLE 0
     #define VERBOSE 1
+    FILE *tarfile;
     if(strstr(argv[1], "c")){
+	if((tarfile = fopen(argv[2], "w")) == NULL)
+	    perror("Opening Tarfile");
         /* create archive */
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
@@ -62,6 +65,8 @@ int execute_command(int argc, char *argv[]){
     }
     
     if(strstr(argv[1], "x")){
+	if((tarfile = fopen(argv[2], "r")) == NULL)
+	    perror("Opening Tarfile");
         /* extract archive */
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
@@ -78,6 +83,8 @@ int execute_command(int argc, char *argv[]){
     }
 
     if(strstr(argv[1], "l")){
+	if((tarfile = fopen(argv[2], "r")) == NULL)
+	    perror("Opening Tarfile");
         /* list archive */
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
