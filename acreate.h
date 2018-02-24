@@ -11,4 +11,6 @@ int split_path(char *path, char *prefix, char *name);
 
 void write_contents(FILE *file, dirnode *tree);
 
+void write_and_pad(char *buffer, int num_to_write, FILE *file);
+
 #endif 

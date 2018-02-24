@@ -37,7 +37,7 @@
 void archive(char *file_name, dirnode *tree) {
     FILE *file;
     char buffer[BLOCK_SIZE];
-    if ((file = fopen(file_name, "r+")) == NULL) {
+    if ((file = fopen(file_name, "w+")) == NULL) {
         /* TODO: handle error here */
         return;
     }
@@ -68,30 +68,27 @@ void write_header(FILE *archive, dirnode *tree) {
     /* name */
     if (split_path(tree->path_name, prefix, buffer) == -1)
         return; /* TODO: handle the error here some how? */
-    length = (int)strlen(buffer); /* length of name */
-    fwrite(buffer, 1, length, archive);
-    memset(buffer, 0, NAME_FIELD_LENGTH - length);
-    fwrite(buffer, 1, NAME_FIELD_LENGTH - length, archive);
+    write_and_pad(buffer, NAME_FIELD_LENGTH, archive);
 
     /* mode */
     sprintf(buffer, "%o", tree->sb.st_mode);
-    fwrite(buffer, 1, MODE_FIELD_LENGTH, archive);
+    write_and_pad(buffer, MODE_FIELD_LENGTH, archive);
 
     /* uid */
     sprintf(buffer, "%o", tree->sb.st_uid);
-    fwrite(buffer, 1, UID_FIELD_LENGTH, archive);
+    write_and_pad(buffer, UID_FIELD_LENGTH, archive);
 
     /* gid */
     sprintf(buffer, "%o", tree->sb.st_gid);
-    fwrite(buffer, 1, GID_FIELD_LENGTH, archive);
+    write_and_pad(buffer, GID_FIELD_LENGTH, archive);
 
     /* size */
     sprintf(buffer, "%llo", tree->sb.st_size);
-    fwrite(buffer, 1, SIZE_FIELD_LENGTH, archive);
+    write_and_pad(buffer, SIZE_FIELD_LENGTH, archive);
 
     /* mtime */
     sprintf(buffer, "%lo", tree->sb.st_mtime);
-    fwrite(buffer, 1, MTIME_FIELD_LENGTH, archive);
+    write_and_pad(buffer, MTIME_FIELD_LENGTH, archive);
 
     /* chksum */
     memset(buffer, ' ', CHKSUM_FIELD_LENGTH);
@@ -111,12 +108,6 @@ void write_header(FILE *archive, dirnode *tree) {
     /* linkname */
     if (S_ISLNK(tree->sb.st_mode)) {
         length = (int)readlink(tree->path_name, buffer, LINKNAME_FIELD_LENGTH);
-        if (length < 0) {
-            getcwd(buffer, 500);
-            puts(buffer);
-            perror("symlink");
-            exit(EXIT_FAILURE);
-        }
         fwrite(buffer, 1, length, archive);
         if (length < LINKNAME_FIELD_LENGTH) {
             memset(buffer, 0, LINKNAME_FIELD_LENGTH - length);
@@ -161,17 +152,14 @@ void write_header(FILE *archive, dirnode *tree) {
 
     /* devmajor */
     sprintf(buffer, "%o", major(tree->sb.st_dev));
-    fwrite(buffer, 1, DEVMAJOR_FIELD_LENGTH, archive);
+    write_and_pad(buffer, DEVMAJOR_FIELD_LENGTH, archive);
 
     /* devminor */
     sprintf(buffer, "%o", minor(tree->sb.st_dev));
-    fwrite(buffer, 1, DEVMAJOR_FIELD_LENGTH, archive);
+    write_and_pad(buffer, DEVMINOR_FIELD_LENGTH, archive);
 
-    /* TODO: prefix */
-    length = (int)strlen(prefix);
-    fwrite(prefix, 1, length, archive);
-    memset(buffer, 0, PREFIX_FIELD_LENGTH - length);
-    fwrite(buffer, 1, PREFIX_FIELD_LENGTH - length, archive);
+    /* prefix */
+    write_and_pad(prefix, PREFIX_FIELD_LENGTH, archive);
 
     /* checksum calculation and write */
     fseek(archive, -HEADER_LENGTH, SEEK_CUR);
@@ -241,12 +229,17 @@ void write_contents(FILE *archive, dirnode *tree) {
     }
 
     while ((length = fread(buffer, 1, BLOCK_SIZE, file)) > 0) {
-        fwrite(buffer, 1, length, archive);
-        if (length < BLOCK_SIZE) {
-            memset(buffer, 0, BLOCK_SIZE - length);
-            fwrite(buffer, 1, BLOCK_SIZE - length, archive);
-        }
+        write_and_pad(buffer, BLOCK_SIZE, archive);x
     }
 
     fclose(file);
+}
+
+void write_and_pad(char *buffer, int num_to_write, FILE *file) {
+    int length = (int)strlen(buffer);
+    fwrite(buffer, 1, length, file);
+    if (length < num_to_write) {
+        memset(buffer, 0, num_to_write - length);
+        fwrite(buffer, 1, num_to_write - length, file);
+    }
 }
