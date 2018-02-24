@@ -17,7 +17,11 @@ dirnode *build_tree(char *path, char *prefix) {
         exit(EXIT_FAILURE);
     }
 
-    new_path = concat(prefix, "/", path);
+    if (prefix == NULL) {
+        new_path = path;
+    } else {
+        new_path = concat(prefix, "/", path);
+    }
     strcpy(tree->path_name, new_path);
     tree->sb = sb;
     tree->children = NULL;
