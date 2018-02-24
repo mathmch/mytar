@@ -137,7 +137,7 @@ void list_contents(FILE* tarfile, int mode){
     char permissions[PERMISSION_WIDTH];
     buffer[0] = '\0';
     fread(buffer, 1, 1, tarfile);
-    lseek(tarfile, -1, SEEK_CUR);
+    fseek(tarfile, -1, SEEK_CUR);
     while(buffer[0] != '\0'){
 	/* get size */
 	fseek(tarfile, SIZE_OFFSET, SEEK_CUR);
@@ -179,7 +179,7 @@ void list_contents(FILE* tarfile, int mode){
 	/* go to next header */
 	fseek(tarfile, size + size%512, SEEK_CUR);
 	fread(buffer, 1, 1, tarfile);
-	lseek(tarfile, -1, SEEK_CUR);
+	fseek(tarfile, -1, SEEK_CUR);
     }
 }
 
@@ -218,8 +218,6 @@ void get_owner(uid_t uid, gid_t gid, char owner[]){
     #define OWNER_WIDTH 17
     #define MAX_NAME_LENGTH 8
     #define USER_NAME_LENGTH 32
-    int i = 0;
-    int length;
     char buffer[USER_NAME_LENGTH];
     struct group *gr;
     struct passwd *pw;
@@ -227,21 +225,22 @@ void get_owner(uid_t uid, gid_t gid, char owner[]){
     if((pw = getpwuid(uid)) == NULL){
 	sprintf(buffer, "%d", uid);
 	strcat(owner, buffer);
-    }else{
-	snprintf(buffer, MAX_USER_NAME, "%s", pw->pw_name);
+    }
+    else{
+	snprintf(buffer, MAX_NAME_LENGTH, "%s", pw->pw_name);
 	strcat(owner, buffer);
-	}
     }
     strcat(owner, "/");
     if((gr = getgrgid(gid)) == NULL){
 	sprintf(buffer, "%d", gid);
 	strcat(owner, buffer);
-    }else{
-	snprintf(buffer, MAX_USER_NAME, "%s", gr->gr_name);
+    }
+    else{
+	snprintf(buffer, MAX_NAME_LENGTH, "%s", gr->gr_name);
 	strcat(owner, buffer);
-	}
     }
 }
+
 
 void get_time(time_t time, char timestr[]){
     struct tm *tm = localtime(&time);
