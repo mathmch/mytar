@@ -90,7 +90,7 @@ void write_header(FILE *archive, dirnode *tree) {
     fwrite(buffer, 1, SIZE_FIELD_LENGTH, archive);
 
     /* mtime */
-    sprintf(buffer, "%lo", tree->sb.st_mtimespec.tv_sec);
+    sprintf(buffer, "%lo", tree->sb.st_mtime);
     fwrite(buffer, 1, MTIME_FIELD_LENGTH, archive);
 
     /* chksum */
