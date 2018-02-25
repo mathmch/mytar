@@ -10,7 +10,7 @@
 
 /* TODO: remove unneeded imports */
 
-FILE *extract_files(FILE *tarfile) {
+FILE *extract_file(FILE *tarfile) {
     /* TODO: put this somewhere shared */
     #define MEANINGFUL_MODE_BITS 5
     #define MAX_FIELD_LENGTH 155
@@ -39,12 +39,19 @@ void find_archives(FILE *tarfile, char *paths[], int elements){
     #define NAME_LENGTH 100
     #define PREFIX_OFFSET 345
     #define PREFIX_LENGTH 155
+    int i;
     char path[MATH_PATH_LENGTH];
-    char buffer[MAX_FIELD_LENGTH];
+    char buffer[MAX_FIELD_LENGTH]; 
+    /* this should probably be in a while loop to search the whole archive */
+    /* while(not at end of archive) */
     fread(buffer, 1, NAME_LENGTH, tarfile);
     fseek(tarfile, PREFIX_OFFSET - NAME_LENGTH, SEEK_CUR);
-    /* build rest of path */
-    
-    
+    fread(path, 1, PREFIX_LENGTH, tarfile);
+    strcat(path, buffer);
+    for(i = 0; i < length; i++){
+	if(strcmp(path, paths[i]) == 0){
+	    extract_file(tarfile);
+	}
+    }
     
 }
