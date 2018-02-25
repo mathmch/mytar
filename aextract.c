@@ -17,7 +17,7 @@
 /* TODO: remove unneeded imports */
 /* TODO: add strict check for all functions */
  
-FILE *extract_file(FILE *tarfile, char *path) {
+void extract_file(FILE *tarfile, char *path) {
 
     char buffer[BLOCK_LENGTH];
     mode_t mode;
@@ -28,7 +28,7 @@ FILE *extract_file(FILE *tarfile, char *path) {
     int blocks;
     
     /* mode */
-    fseek(tarfile, -PREFIX_OFFSET-PREFIX_LENGTH + MODE_OFFSET, SEEK_CUR);
+    fseek(tarfile, MODE_OFFSET, SEEK_CUR);
     fread(buffer, 1, MODE_LENGTH, tarfile);
     mode = strtol(buffer, NULL, 8);
 
@@ -41,8 +41,9 @@ FILE *extract_file(FILE *tarfile, char *path) {
     fread(buffer, 1, MTIME_LENGTH, tarfile);
     tm.actime = time(NULL);
     tm.modtime = strtol(buffer, NULL, 8);
-    
+
     if(S_ISDIR(mode)){
+	traverse_path(path, 1);
 	if(mode & 0111){
 	    if(mkdir(path, 0777) < 0)
 		perror(path);
@@ -53,6 +54,7 @@ FILE *extract_file(FILE *tarfile, char *path) {
 	}
     }
     else{
+	traverse_path(path, 0);
 	if(mode & 0111){
 	    if((fd = creat(path, 0777)) < 0)
 		perror(path);
@@ -65,7 +67,7 @@ FILE *extract_file(FILE *tarfile, char *path) {
 	if(size % BLOCK_LENGTH == 0)
 	    blocks = (size/BLOCK_LENGTH)*BLOCK_LENGTH;
 	else
-	    blocks = (size/BLOCK_LENGTH)*BLOCK_LENGTH + BLOCK_LENGTH;
+	    blocks = (size/BLOCK_LENGTH)*BLOCK_LENGTH + 1;
 	/* writes the file */
 	for(i = 0; i < blocks; i++){
 	    fread(buffer, 1, BLOCK_LENGTH, tarfile);
@@ -74,16 +76,15 @@ FILE *extract_file(FILE *tarfile, char *path) {
 	    else
 		write(fd, buffer, BLOCK_LENGTH);
 	}
-	
+	close(fd);
     }
     utime(path, &tm);
-    
-    return NULL;
 }
 
 /* searches for archives to extract. If elements is 0, extract all 
  * read path of each header, compare against given paths
  * if archived file is directory, extract everything inside of it */
+/* this function is pretty broken */
 void find_archives(FILE *tarfile, char *paths[], int elements){
     #define MAX_PATH_LENGTH 256
     #define MAX_FIELD_LENGTH 155
@@ -96,11 +97,42 @@ void find_archives(FILE *tarfile, char *paths[], int elements){
     fread(buffer, 1, NAME_LENGTH, tarfile);
     fseek(tarfile, PREFIX_OFFSET - NAME_LENGTH, SEEK_CUR);
     fread(path, 1, PREFIX_LENGTH, tarfile);
+    /* reset to start of header */
+    fseek(tarfile, -PREFIX_LENGTH - PREFIX_OFFSET, SEEK_CUR);
+    strcat(path, "/");
     strcat(path, buffer);
     for(i = 0; i < elements; i++){
 	if(strcmp(path, paths[i]) == 0){
 	    extract_file(tarfile, paths[i]);
 	}
     }
+    extract_file(tarfile, paths[0]);
     
+}
+
+void traverse_path(char *path, int is_dir){
+    char *token;
+    int count = count_occur(path, '/');
+    int i;
+    token = strtok(path, "/");
+    for(i = 0; i < count; i++){	
+	mkdir(token, 0777);
+	chdir(token);
+	token = strtok(NULL, "/");
+    }
+    if(is_dir && *token != '\0'){
+        mkdir(token, 0777);
+    }
+    for(i = 0; i < count; i++)
+	chdir("..");   
+}
+
+int count_occur(char *path, char c){
+    int i;
+    int count = 0;;
+    for(i = 0; path[i] = '\0'; i++){
+	if(path[i] == c)
+	    count++;
+    }
+    return count;
 }

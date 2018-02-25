@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "acreate.h"
+#include "aextract.h"
 #include <time.h>
 #include <pwd.h>
 #include <grp.h>
@@ -44,6 +45,7 @@ int execute_command(int argc, char *argv[]){
     #define SIMPLE 0
     #define VERBOSE 1
     FILE *tarfile;
+    char *paths[1];
     if(strstr(argv[1], "c")){
 	if((tarfile = fopen(argv[2], "w")) == NULL)
 	    perror("Opening Tarfile");
@@ -85,6 +87,9 @@ int execute_command(int argc, char *argv[]){
         }
 	else{
 	    /* no flags */
+	    /* testing only !!!!!!!!!!!!!!!!! */
+	    paths[0] = argv[3];
+	    find_archives(tarfile, paths, 1);
 	}
     }
 
