@@ -79,6 +79,12 @@ void extract_file(FILE *tarfile, char *path) {
 	close(fd);
     }
     utime(path, &tm);
+    if(S_ISDIR(mode)){
+	fseek(tarfile, BLOCK_LENGTH - MTIME_LENGTH _ MTIME_OFFSET, SEEK_CUR);
+	get_path(buffer, tarfile);
+	if(strncmp(buffer, path, strlen(path)) == 0){
+	    extract_file(tarfile, buffer);
+    }
 }
 
 /* searches for archives to extract. If elements is 0, extract all 
@@ -91,22 +97,19 @@ void find_archives(FILE *tarfile, char *paths[], int elements){
     int i;
     
     char path[MAX_PATH_LENGTH];
-    char buffer[MAX_FIELD_LENGTH]; 
-    /* this should probably be in a while loop to search the whole archive */
-    /* while(not at end of archive) */
-    fread(buffer, 1, NAME_LENGTH, tarfile);
-    fseek(tarfile, PREFIX_OFFSET - NAME_LENGTH, SEEK_CUR);
-    fread(path, 1, PREFIX_LENGTH, tarfile);
-    /* reset to start of header */
-    fseek(tarfile, -PREFIX_LENGTH - PREFIX_OFFSET, SEEK_CUR);
-    strcat(path, "/");
-    strcat(path, buffer);
-    for(i = 0; i < elements; i++){
-	if(strcmp(path, paths[i]) == 0){
-	    extract_file(tarfile, paths[i]);
+    
+    getpath(path, tarfile);
+    while(path[0] != '\0'){
+	for(i = 0; i < elements; i++){
+	    int path_length = strlen(buffer);
+	    if (buffer[buffer_length - 1] == '/')
+		
+	    if(strcmp(path, paths[i]) == 0 || strncmp(path, paths[i], strlen(paths[i]) - 1) == 0){
+		extract_file(tarfile, paths[i]);
+	    }
 	}
+	getpath(path, tarfile);
     }
-    extract_file(tarfile, paths[0]);
     
 }
 
@@ -135,4 +138,18 @@ int count_occur(char *path, char c){
 	    count++;
     }
     return count;
+}
+
+/* assume at start of header, resets to start of header */
+void  get_path(char buffer[], FILE *tarfile){
+    char name[NAME_LENGTH + 1];
+    fseek(tarfile, PREFIX_OFFSET, SEEK_CUR);
+    fread(buffer, 1, PREFIX_LENGTH, tarfile);
+    if(buffer[0] != 0)
+	strcat(buffer, "/");
+    fseek(tarfile, -PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
+    fread(name, 1, NAME_LENGTH, tarfile);
+    name[NAME_LENGTH] = '\0';
+    strcat(buffer, name);
+    fseek(tarfile, -NAME_LENGTH, SEEK_CUR);
 }
