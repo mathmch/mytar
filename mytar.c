@@ -6,6 +6,7 @@
 #include <time.h>
 #include <pwd.h>
 #include <grp.h>
+#include "header.h"
 
 
 void validate_command(int argc, char *argv[]);
@@ -114,23 +115,10 @@ int execute_command(int argc, char *argv[]){
 /* mode = 0 for standard, verbose otherwise 
    TODO: Put it in a loop so it runs through all headers */
 void list_contents(FILE* tarfile, int verbose){
-    #define BLOCK_LENGTH 512
     #define PATH_MAX 256
-    #define NAME_LENGTH 100
-    #define SIZE_OFFSET 124
-    #define SIZE_LENGTH 12
-    #define PREFIX_LENGTH 155
-    #define PREFIX_OFFSET 345
-    #define BLOCK_SIZE 512
     #define EXTRA_SPACE 12
-    #define PERMISSION_LENGTH 8
-    #define PERMISSION_WIDTH 11
-    #define PERMISSION_OFFSET 100
+    #define PERMISSION_WIDTH 11 
     #define OWNER_WIDTH 17
-    #define UID_LENGTH 8
-    #define GID_LENGTH 8
-    #define TIME_LENGTH 12
-    #define TIME_OFFSET 136
     #define TIME_WIDTH 16
     int size;
     uid_t uid;
@@ -147,11 +135,11 @@ void list_contents(FILE* tarfile, int verbose){
     fseek(tarfile, -1, SEEK_CUR);
     while(buffer[0] != '\0'){
 	/* get permissions */
-	fseek(tarfile, PERMISSION_OFFSET, SEEK_CUR);
-	fread(buffer, 1, PERMISSION_LENGTH, tarfile);
+	fseek(tarfile, MODE_OFFSET, SEEK_CUR);
+	fread(buffer, 1, MODE_LENGTH, tarfile);
 	mode = strtol(buffer, NULL, 8);
 	/* get size */
-	fseek(tarfile, SIZE_OFFSET - PERMISSION_OFFSET - PERMISSION_LENGTH, SEEK_CUR);
+	fseek(tarfile, SIZE_OFFSET - MODE_OFFSET - MODE_LENGTH, SEEK_CUR);
 	fread(buffer, 1, SIZE_LENGTH, tarfile);
 	size = strtol(buffer, NULL, 8);
 	/* get name */
@@ -164,8 +152,8 @@ void list_contents(FILE* tarfile, int verbose){
 	strcat(path, buffer);
 	if(verbose){
 	    /* verbose print */
-       	    fseek(tarfile, PERMISSION_OFFSET - PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
-	    fread(permissions, 1, PERMISSION_LENGTH, tarfile);
+       	    fseek(tarfile, MODE_OFFSET - PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
+	    fread(permissions, 1, MODE_LENGTH, tarfile);
 	    get_permissions(permissions, mode);
 	
 	    fread(owner, 1, UID_LENGTH, tarfile);
@@ -175,13 +163,13 @@ void list_contents(FILE* tarfile, int verbose){
 	    get_owner(uid, gid, owner);
 	
 	    fseek(tarfile, SIZE_LENGTH, SEEK_CUR);
-	    fread(buffer, 1, TIME_LENGTH, tarfile);
+	    fread(buffer, 1, MTIME_LENGTH, tarfile);
 	    time = strtol(buffer, NULL, 8);
 	    get_time(time, timestr);
 	
 	    printf("%10s %17s %8d %16s %s\n", permissions, owner, size, timestr, path);
 
-	    fseek(tarfile, PREFIX_OFFSET + PREFIX_LENGTH - TIME_OFFSET - TIME_LENGTH, SEEK_CUR); 
+	    fseek(tarfile, PREFIX_OFFSET + PREFIX_LENGTH - MTIME_OFFSET - MTIME_LENGTH, SEEK_CUR); 
 	}else{
 	    /* standard print */
 	    puts(path);
@@ -190,7 +178,7 @@ void list_contents(FILE* tarfile, int verbose){
 	fseek(tarfile, EXTRA_SPACE, SEEK_CUR);
 	/* go to next header */
 	if(!S_ISDIR(mode)){
-	    if(size % BLOCK_SIZE == 0)
+	    if(size % BLOCK_LENGTH == 0)
 	       	fseek(tarfile, (size/BLOCK_LENGTH)*BLOCK_LENGTH, SEEK_CUR);
 	    else
 		fseek(tarfile, (size/BLOCK_LENGTH)*BLOCK_LENGTH + BLOCK_LENGTH, SEEK_CUR);
