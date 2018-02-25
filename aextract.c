@@ -30,3 +30,21 @@ FILE *extract_files(FILE *tarfile) {
     return NULL;
 }
 
+/* searches for archives to extract. If elements is 0, extract all 
+ * read path of each header, compare against given paths
+ * if archived file is directory, extract everything inside of it */
+void find_archives(FILE *tarfile, char *paths[], int elements){
+    #define MAX_PATH_LENGTH 256
+    #define MAX_FIELD_LENGTH 155
+    #define NAME_LENGTH 100
+    #define PREFIX_OFFSET 345
+    #define PREFIX_LENGTH 155
+    char path[MATH_PATH_LENGTH];
+    char buffer[MAX_FIELD_LENGTH];
+    fread(buffer, 1, NAME_LENGTH, tarfile);
+    fseek(tarfile, PREFIX_OFFSET - NAME_LENGTH, SEEK_CUR);
+    /* build rest of path */
+    
+    
+    
+}

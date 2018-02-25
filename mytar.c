@@ -51,12 +51,12 @@ int execute_command(int argc, char *argv[]){
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
 	    archive(argv[2], tree);
-	     print_tree(tree);
+	    print_tree(tree);
         }
         else if(strstr(argv[1], "v")){
             /* use verbose */
 	    archive(argv[2], tree);
-	     print_tree(tree);
+	    print_tree(tree);
 	    
         }
         else if(strstr(argv[1], "S")){
@@ -114,7 +114,7 @@ int execute_command(int argc, char *argv[]){
 /* mode = 0 for standard, verbose otherwise 
    TODO: Put it in a loop so it runs through all headers */
 void list_contents(FILE* tarfile, int verbose){
-    #define HEADER_LENGTH 512
+    #define BLOCK_LENGTH 512
     #define PATH_MAX 256
     #define NAME_LENGTH 100
     #define SIZE_OFFSET 124
@@ -189,8 +189,11 @@ void list_contents(FILE* tarfile, int verbose){
 	/* go to end of block */
 	fseek(tarfile, EXTRA_SPACE, SEEK_CUR);
 	/* go to next header */
-	if(!S_ISDIR(mode) && size != 0){
-	fseek(tarfile, (size/HEADER_LENGTH)*HEADER_LENGTH + 512, SEEK_CUR);
+	if(!S_ISDIR(mode)){
+	    if(size % BLOCK_SIZE == 0)
+	       	fseek(tarfile, (size/BLOCK_LENGTH)*BLOCK_LENGTH, SEEK_CUR);
+	    else
+		fseek(tarfile, (size/BLOCK_LENGTH)*BLOCK_LENGTH + BLOCK_LENGTH, SEEK_CUR);
 	}
 	fread(buffer, 1, 1, tarfile);
 	fseek(tarfile, -1, SEEK_CUR);
