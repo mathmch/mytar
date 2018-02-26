@@ -21,12 +21,8 @@ void get_owner(uid_t uid, gid_t gid, char owner[]);
 void get_time(time_t time, char timestr[]);
 
 
-/* TODO: Add strict support for listing and extracting */
-/* TODO: add verbose to extract */
-/* TODO: make execute_command work */
 /* TODO: fix line lengths */
 /* TODO: make extract all with no parameter */
-/* TODO: add printing for things it couldn't extract */
 
 int main(int argc, char *argv[]) {
     validate_command(argc, argv);
@@ -85,12 +81,14 @@ int execute_command(int argc, char *argv[]){
     }
     
     if(strstr(argv[1], "x")){
-	/* populates the path array */
-	for(i = 0; i < argc-2; i++){
-	    paths[i] = argv[i+3];
-	}
 	if((tarfile = fopen(argv[2], "r")) == NULL)
 	    perror("Opening Tarfile");
+	
+	/* populates the path array */
+	for(i = 0; i < argc-3; i++){
+	    paths[i] = argv[i+3];
+	}
+	
         /* extract archive */
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
@@ -158,6 +156,10 @@ void list_contents(FILE* tarfile, int isverbose, int isstrict){
     fseek(tarfile, -1, SEEK_CUR);
     while(buffer[0] != '\0'){
 	/* get permissions */
+        if(validate_header(tarfile, isstrict) != 0){
+	    fprintf(stderr, "Invalid Header\n");
+	    exit(EXIT_FAILURE);
+	}
 	fseek(tarfile, MODE_OFFSET, SEEK_CUR);
 	fread(buffer, 1, MODE_LENGTH, tarfile);
 	mode = strtol(buffer, NULL, 8);

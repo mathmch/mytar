@@ -31,7 +31,10 @@ void extract_file(FILE *tarfile, char *path, int isverbose, int isstrict) {
     int size;
     int blocks;
 
-    /* TODO: add strict check */
+    if(validate_header(tarfile, isstrict) != 0){
+	fprintf(stderr, "Invalid Header\n");
+	exit(EXIT_FAILURE);
+    }
     /* mode */
     fseek(tarfile, MODE_OFFSET, SEEK_CUR);
     fread(buffer, 1, MODE_LENGTH, tarfile);
@@ -113,6 +116,8 @@ void find_archives(FILE *tarfile, char *paths[], int elements, int isverbose, in
     char actual_path[MAX_PATH_LENGTH];
     
     get_path(actual_path, tarfile);
+    if(elements == 0)
+	extract_file(tarfile, actual_path, isverbose, isstrict);
     while(actual_path[0] != '\0') {
         int extracted = 0;
         for (i = 0; i < elements; i++) {
