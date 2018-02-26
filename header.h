@@ -1,6 +1,8 @@
 #ifndef header_h
 #define header_h
 
+#include <stdio.h>
+
 #define BLOCK_LENGTH 512
 #define MAGIC "ustar"
 #define VERSION "00"
@@ -41,5 +43,9 @@
 #define DEVMAJOR_OFFSET (GNAME_OFFSET + GNAME_LENGTH)           /* 329 */
 #define DEVMINOR_OFFSET (DEVMAJOR_OFFSET + DEVMAJOR_LENGTH)     /* 337 */
 #define PREFIX_OFFSET (DEVMINOR_OFFSET + DEVMINOR_LENGTH)       /* 345 */
+
+int validate_header(FILE *tarfile, int strict);
+
+int compute_checksum(FILE *tarfile);
 
 #endif
