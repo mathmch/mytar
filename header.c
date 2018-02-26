@@ -13,7 +13,7 @@ int validate_header(FILE *tarfile, int strict) {
     int actual_checksum;
     memset(buffer, 0, CHKSUM_LENGTH);
     fseek(tarfile, MAGIC_OFFSET, SEEK_CUR);
-    fread(tarfile, 1, MAGIC_LENGTH, tarfile);
+    fread(buffer, 1, MAGIC_LENGTH, tarfile);
     if (strncmp(buffer, MAGIC, magic_strlen) != 0)
         return -1; /* magic does not match */
     if (strict) {
@@ -48,5 +48,6 @@ int compute_checksum(FILE *tarfile) {
         else
             checksum += c;
     }
+    fseek(tarfile, -HEADER_LENGTH, SEEK_CUR);
     return checksum;
 }
