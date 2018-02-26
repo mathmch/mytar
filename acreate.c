@@ -52,8 +52,8 @@ void write_header(FILE *archive, dirnode *tree) {
         return; /* TODO: handle the error here some how? */
     write_and_pad(buffer, NAME_LENGTH, archive);
 
-    /* mode, masked to ignore unimportant bits */
-    sprintf(buffer, "%07o", tree->sb.st_mode & 07777);
+    /* mode */
+    sprintf(buffer, "%07o", tree->sb.st_mode);
     write_and_pad(buffer, MODE_LENGTH, archive);
 
     /* uid */

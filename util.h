@@ -9,4 +9,6 @@ void *safe_realloc(void *ptr, size_t size, const char *msg);
 
 char *concat(char *str1, char *str2, char *str3);
 
+int size_to_blocks(off_t size);
+
 #endif /* util_h */

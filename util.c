@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "header.h"
 
 /* malloc or exit with the message upon failure */
 void *safe_malloc(size_t size, const char *msg) {
@@ -77,4 +78,11 @@ char *concat(char *str1, char *str2, char *str3) {
 
     new[total_length] = '\0';
     return new;
+}
+
+int size_to_blocks(off_t size) {
+    if (size % BLOCK_LENGTH == 0)
+        return (int)(size / BLOCK_LENGTH);
+    else
+        return (int)((size / BLOCK_LENGTH) + 1);
 }
