@@ -27,4 +27,4 @@ util.o: util.c
 	$(CC) $(CCFLAGS) -c -o util.o util.c
 
 clean:
-	rm mytar.o acreate.o dirnode.o util.o
+	rm mytar.o aextract.o acreate.o dirnode.o util.o

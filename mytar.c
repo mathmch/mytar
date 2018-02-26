@@ -9,13 +9,24 @@
 #include <grp.h>
 #include "header.h"
 
-
+#define STRICT 1
+#define NON_STRICT 0
+#define VERBOSE 1
+#define NON_VERBOSE 0
 void validate_command(int argc, char *argv[]);
 int execute_command(int argc, char *argv[]);
-void list_contents(FILE* tarfile, int verbose);
+void list_contents(FILE* tarfile, int isverbose, int isstrict);
 void get_permissions(char permissions[], mode_t mode);
 void get_owner(uid_t uid, gid_t gid, char owner[]);
 void get_time(time_t time, char timestr[]);
+
+
+/* TODO: Add strict support for listing and extracting */
+/* TODO: add verbose to extract */
+/* TODO: make execute_command work */
+/* TODO: fix line lengths */
+/* TODO: make extract all with no parameter */
+/* TODO: add printing for things it couldn't extract */
 
 int main(int argc, char *argv[]) {
     validate_command(argc, argv);
@@ -42,10 +53,11 @@ void validate_command(int argc, char *argv[]){
 }
 
 int execute_command(int argc, char *argv[]){
-    #define SIMPLE 0
-    #define VERBOSE 1
     FILE *tarfile;
-    char *paths[1];
+    int i;
+    char **paths;
+    /* create list of paths equal to number of things to extract */
+    paths = (char**)malloc(sizeof(char*)*(argc-2));
     if(strstr(argv[1], "c")){
 	if((tarfile = fopen(argv[2], "w")) == NULL)
 	    perror("Opening Tarfile");
@@ -73,23 +85,28 @@ int execute_command(int argc, char *argv[]){
     }
     
     if(strstr(argv[1], "x")){
+	/* populates the path array */
+	for(i = 0; i < argc-2; i++){
+	    paths[i] = argv[i+3];
+	}
 	if((tarfile = fopen(argv[2], "r")) == NULL)
 	    perror("Opening Tarfile");
         /* extract archive */
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
+	    find_archives(tarfile, paths, i, VERBOSE, STRICT);
         }
         else if(strstr(argv[1], "v")){
             /* use verbose */
+	    find_archives(tarfile, paths, i, VERBOSE, NON_STRICT);
         }
         else if(strstr(argv[1], "S")){
             /* use strict */
+	    find_archives(tarfile, paths, i, NON_VERBOSE, STRICT);
         }
 	else{
 	    /* no flags */
-	    /* testing only !!!!!!!!!!!!!!!!! */
-	    paths[0] = argv[3];
-	    find_archives(tarfile, paths, 1);
+	    find_archives(tarfile, paths, i, NON_VERBOSE, NON_STRICT);
 	}
     }
 
@@ -99,27 +116,28 @@ int execute_command(int argc, char *argv[]){
         /* list archive */
         if(strstr(argv[1], "v") && strstr(argv[1], "S")){
             /* use verbose and strict */
-	    list_contents(tarfile, VERBOSE);
+	    list_contents(tarfile, VERBOSE, STRICT);
         }
         else if(strstr(argv[1], "v")){
             /* use verbose */
-	    list_contents(tarfile, VERBOSE);
+	    list_contents(tarfile, VERBOSE, NON_STRICT);
         }
         else if(strstr(argv[1], "S")){
             /* use strict */
-	    list_contents(tarfile, SIMPLE);
+	    list_contents(tarfile, NON_VERBOSE, STRICT);
         }
 	else{
 	    /* no flags */
-	    list_contents(tarfile, SIMPLE);
+	    list_contents(tarfile, NON_VERBOSE, NON_STRICT);
 	}
     }
+    free(paths);
     return 0;
 }
 
 /* mode = 0 for standard, verbose otherwise 
    TODO: Put it in a loop so it runs through all headers */
-void list_contents(FILE* tarfile, int verbose){
+void list_contents(FILE* tarfile, int isverbose, int isstrict){
     #define PATH_MAX 256
     #define EXTRA_SPACE 12
     #define PERMISSION_WIDTH 11 
@@ -155,9 +173,10 @@ void list_contents(FILE* tarfile, int verbose){
 	fread(path, 1, PREFIX_LENGTH, tarfile);
 	/* make full path */
 	strcat(path, buffer);
-	if(verbose){
+	if(isverbose){
 	    /* verbose print */
-       	    fseek(tarfile, MODE_OFFSET - PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
+       	    fseek(tarfile, MODE_OFFSET - PREFIX_OFFSET -
+		  PREFIX_LENGTH, SEEK_CUR);
 	    fread(permissions, 1, MODE_LENGTH, tarfile);
 	    get_permissions(permissions, mode);
 	
@@ -172,9 +191,11 @@ void list_contents(FILE* tarfile, int verbose){
 	    time = strtol(buffer, NULL, 8);
 	    get_time(time, timestr);
 	
-	    printf("%10s %17s %8d %16s %s\n", permissions, owner, size, timestr, path);
+	    printf("%10s %17s %8d %16s %s\n", permissions, owner,
+		   size, timestr, path);
 
-	    fseek(tarfile, PREFIX_OFFSET + PREFIX_LENGTH - MTIME_OFFSET - MTIME_LENGTH, SEEK_CUR); 
+	    fseek(tarfile, PREFIX_OFFSET + PREFIX_LENGTH -
+		  MTIME_OFFSET - MTIME_LENGTH, SEEK_CUR); 
 	}else{
 	    /* standard print */
 	    puts(path);
@@ -186,7 +207,8 @@ void list_contents(FILE* tarfile, int verbose){
 	    if(size % BLOCK_LENGTH == 0)
 	       	fseek(tarfile, (size/BLOCK_LENGTH)*BLOCK_LENGTH, SEEK_CUR);
 	    else
-		fseek(tarfile, (size/BLOCK_LENGTH)*BLOCK_LENGTH + BLOCK_LENGTH, SEEK_CUR);
+		fseek(tarfile, (size/BLOCK_LENGTH)*BLOCK_LENGTH
+		      + BLOCK_LENGTH, SEEK_CUR);
 	}
 	fread(buffer, 1, 1, tarfile);
 	fseek(tarfile, -1, SEEK_CUR);

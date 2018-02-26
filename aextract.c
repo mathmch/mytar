@@ -14,16 +14,14 @@
 #include "aextract.h"
 #include "header.h"
 
-/* TODO: remove unneeded imports */
-/* TODO: add strict check for all functions */
-
 int count_occur(char *path, char c);
 void get_path(char buffer[], FILE *tarfile);
 void traverse_path(char *path, int is_dir);
 mode_t get_mode(FILE *tarfile);
 off_t get_size(FILE *tarfile);
 
-void extract_file(FILE *tarfile, char *path) {
+/* 1 for verbose/strick on, 0 otherwise */
+void extract_file(FILE *tarfile, char *path, int isverbose, int isstrict) {
 
     char buffer[BLOCK_LENGTH];
     mode_t mode;
@@ -32,7 +30,8 @@ void extract_file(FILE *tarfile, char *path) {
     int fd;
     int size;
     int blocks;
-    
+
+    /* TODO: add strict check */
     /* mode */
     fseek(tarfile, MODE_OFFSET, SEEK_CUR);
     fread(buffer, 1, MODE_LENGTH, tarfile);
@@ -91,10 +90,12 @@ void extract_file(FILE *tarfile, char *path) {
         close(fd);
     }
     utime(path, &tm);
+    if(isverbose)
+	printf("%s\n", path);
     if(S_ISDIR(mode)){
         get_path(buffer, tarfile);
         while (strncmp(buffer, path, strlen(path)) == 0) {
-            extract_file(tarfile, buffer);
+            extract_file(tarfile, buffer, isverbose, isstrict);
             get_path(buffer, tarfile);
         }
     }
@@ -103,8 +104,8 @@ void extract_file(FILE *tarfile, char *path) {
 /* searches for archives to extract. If elements is 0, extract all 
  * read path of each header, compare against given paths
  * if archived file is directory, extract everything inside of it */
-/* this function is pretty broken */
-void find_archives(FILE *tarfile, char *paths[], int elements){
+/* 1 for verbose/strick on, 0 otherwise */
+void find_archives(FILE *tarfile, char *paths[], int elements, int isverbose, int isstrict){
     #define MAX_PATH_LENGTH 256
     #define MAX_FIELD_LENGTH 155
     int i;
@@ -118,7 +119,7 @@ void find_archives(FILE *tarfile, char *paths[], int elements){
             if (paths[i] == NULL)
                 continue;
             if (strcmp(actual_path, paths[i]) == 0) {
-                extract_file(tarfile, paths[i]);
+                extract_file(tarfile, paths[i], isverbose, isstrict);
                 extracted++;
                 paths[i] = NULL; /* don't search for this path again */
             } else {
@@ -127,7 +128,7 @@ void find_archives(FILE *tarfile, char *paths[], int elements){
                 if (actual_path[path_length - 1] == '/'
                     && strlen(paths[i]) == path_length - 1
                     && strncmp(actual_path, paths[i], path_length - 1) == 0) {
-                    extract_file(tarfile, actual_path);
+                    extract_file(tarfile, actual_path, isverbose, isstrict);
                     extracted++;
                     paths[i] = NULL; /* don't search for this path again */
                 }
@@ -145,6 +146,10 @@ void find_archives(FILE *tarfile, char *paths[], int elements){
         }
 
         get_path(actual_path, tarfile);
+    }
+    for(i = 0; i < elements; i++){
+	if(paths[i] != NULL)
+	    printf("Could not extract: %s\n", paths[i]);
     }
     
 }
