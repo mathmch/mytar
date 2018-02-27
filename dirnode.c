@@ -33,11 +33,15 @@ dirnode *build_tree(char *path, char *prefix) {
         struct dirent *entry;
         chdir(path);
         while ((entry = readdir(dir)) != NULL) {
-            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            if (strcmp(entry->d_name, ".") == 0
+		|| strcmp(entry->d_name, "..") == 0)
                 continue;
             tree->child_count++;
-            tree->children = safe_realloc(tree->children, tree->child_count * sizeof(dirnode*), FN_NAME);
-            tree->children[tree->child_count - 1] = build_tree(entry->d_name, new_path);
+            tree->children =safe_realloc(tree->children,
+					 tree->child_count * sizeof(dirnode*),
+					 FN_NAME);
+            tree->children[tree->child_count-1] = build_tree(entry->d_name,
+							     new_path);
         }
         chdir("..");
 
@@ -52,7 +56,8 @@ dirnode *build_tree(char *path, char *prefix) {
    final spot is a file, not a dir. */
 void print_tree(dirnode *tree) {
     int i;
-    if (!S_ISREG(tree->sb.st_mode) && !S_ISDIR(tree->sb.st_mode) && !S_ISLNK(tree->sb.st_mode)) {
+    if (!S_ISREG(tree->sb.st_mode) &&
+	!S_ISDIR(tree->sb.st_mode) && !S_ISLNK(tree->sb.st_mode)) {
         /* unsupported file type, does not go in the archive */
         return;
     }

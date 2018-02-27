@@ -28,7 +28,8 @@ void archive(char *file_name, dirnode *tree) {
 
 void archive_helper(FILE *file, dirnode *tree) {
     int i;
-    if (!S_ISREG(tree->sb.st_mode) && !S_ISDIR(tree->sb.st_mode) && !S_ISLNK(tree->sb.st_mode)) {
+    if (!S_ISREG(tree->sb.st_mode) &&
+	!S_ISDIR(tree->sb.st_mode) && !S_ISLNK(tree->sb.st_mode)) {
         fprintf(stderr, "error: %s: unsupported file type", tree->path_name);
         return;
     }

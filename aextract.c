@@ -62,11 +62,13 @@ void extract_file(FILE *tarfile, char *path, int isverbose, int isstrict) {
         }
         fseek(tarfile, BLOCK_LENGTH - MTIME_LENGTH - MTIME_OFFSET, SEEK_CUR);
     } else if (S_ISLNK(mode)) {
-        fseek(tarfile, LINKNAME_OFFSET - MTIME_LENGTH - MTIME_OFFSET, SEEK_CUR);
+        fseek(tarfile, LINKNAME_OFFSET -
+	      MTIME_LENGTH - MTIME_OFFSET, SEEK_CUR);
         fread(buffer, 1, LINKNAME_LENGTH, tarfile);
         buffer[LINKNAME_LENGTH] = '\0';
         symlink(buffer, path);
-        fseek(tarfile, BLOCK_LENGTH - LINKNAME_OFFSET - LINKNAME_LENGTH, SEEK_CUR);
+        fseek(tarfile, BLOCK_LENGTH -
+	      LINKNAME_OFFSET - LINKNAME_LENGTH, SEEK_CUR);
     } else {
         traverse_path(path, 0);
         if(mode & 0111){
@@ -108,7 +110,8 @@ void extract_file(FILE *tarfile, char *path, int isverbose, int isstrict) {
  * read path of each header, compare against given paths
  * if archived file is directory, extract everything inside of it */
 /* 1 for verbose/strick on, 0 otherwise */
-void find_archives(FILE *tarfile, char *paths[], int elements, int isverbose, int isstrict){
+void find_archives(FILE *tarfile, char *paths[],
+		   int elements, int isverbose, int isstrict){
     #define MAX_PATH_LENGTH 256
     #define MAX_FIELD_LENGTH 155
     int i;
@@ -128,11 +131,13 @@ void find_archives(FILE *tarfile, char *paths[], int elements, int isverbose, in
                 extracted++;
                 paths[i] = NULL; /* don't search for this path again */
             } else {
-                /* check if they named a directory without putting a '/' at the end */
+                /* check if they named a directory without 
+		   putting a '/' at the end */
                 int path_length = (int)strlen(actual_path);
                 if (actual_path[path_length - 1] == '/'
                     && strlen(paths[i]) == path_length - 1
-                    && strncmp(actual_path, paths[i], path_length - 1) == 0) {
+                    && strncmp(actual_path, paths[i],
+			       path_length - 1) == 0) {
                     extract_file(tarfile, actual_path, isverbose, isstrict);
                     extracted++;
                     paths[i] = NULL; /* don't search for this path again */

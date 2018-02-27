@@ -21,9 +21,6 @@ void get_owner(uid_t uid, gid_t gid, char owner[]);
 void get_time(time_t time, char timestr[]);
 
 
-/* TODO: fix line lengths */
-/* TODO: make extract all with no parameter */
-
 int main(int argc, char *argv[]) {
     validate_command(argc, argv);
     execute_command(argc, argv);
@@ -51,31 +48,25 @@ void validate_command(int argc, char *argv[]){
 int execute_command(int argc, char *argv[]){
     FILE *tarfile;
     int i;
+    int isverbose;
+    int isstrict;
     char **paths;
     /* create list of paths equal to number of things to extract */
     paths = (char**)malloc(sizeof(char*)*(argc-2));
+    isverbose = (strstr(argv[1], "v") == 0) ? VERBOSE : NON_VERBOSE;
+    isstrict = (strstr(argv[1], "S") == 0) ? STRICT: NON_STRICT;
+    
     if(strstr(argv[1], "c")){
+	/* TODO: figure out what strict should do, if anything */
 	if((tarfile = fopen(argv[2], "w")) == NULL)
 	    perror("Opening Tarfile");
 	dirnode *tree = build_tree(argv[3], NULL);
         /* create archive */
-        if(strstr(argv[1], "v") && strstr(argv[1], "S")){
+        if(isverbose){
             /* use verbose and strict */
 	    archive(argv[2], tree);
 	    print_tree(tree);
-        }
-        else if(strstr(argv[1], "v")){
-            /* use verbose */
-	    archive(argv[2], tree);
-	    print_tree(tree);
-	    
-        }
-        else if(strstr(argv[1], "S")){
-            /* use strict */
-	    archive(argv[2], tree);
-	}
-	else{
-	    /* no flags */
+	}else{
 	    archive(argv[2], tree);
 	}
     }
@@ -90,51 +81,20 @@ int execute_command(int argc, char *argv[]){
 	}
 	
         /* extract archive */
-        if(strstr(argv[1], "v") && strstr(argv[1], "S")){
-            /* use verbose and strict */
-	    find_archives(tarfile, paths, i, VERBOSE, STRICT);
-        }
-        else if(strstr(argv[1], "v")){
-            /* use verbose */
-	    find_archives(tarfile, paths, i, VERBOSE, NON_STRICT);
-        }
-        else if(strstr(argv[1], "S")){
-            /* use strict */
-	    find_archives(tarfile, paths, i, NON_VERBOSE, STRICT);
-        }
-	else{
-	    /* no flags */
-	    find_archives(tarfile, paths, i, NON_VERBOSE, NON_STRICT);
-	}
+	find_archives(tarfile, paths, i, isverbose, isstrict);
     }
 
     if(strstr(argv[1], "t")){
 	if((tarfile = fopen(argv[2], "r")) == NULL)
 	    perror("Opening Tarfile");
         /* list archive */
-        if(strstr(argv[1], "v") && strstr(argv[1], "S")){
-            /* use verbose and strict */
-	    list_contents(tarfile, VERBOSE, STRICT);
-        }
-        else if(strstr(argv[1], "v")){
-            /* use verbose */
-	    list_contents(tarfile, VERBOSE, NON_STRICT);
-        }
-        else if(strstr(argv[1], "S")){
-            /* use strict */
-	    list_contents(tarfile, NON_VERBOSE, STRICT);
-        }
-	else{
-	    /* no flags */
-	    list_contents(tarfile, NON_VERBOSE, NON_STRICT);
-	}
+        list_contents(tarfile, isverbose, isstrict);
     }
     free(paths);
     return 0;
 }
 
-/* mode = 0 for standard, verbose otherwise 
-   TODO: Put it in a loop so it runs through all headers */
+/* mode = 0 for standard, verbose otherwise */
 void list_contents(FILE* tarfile, int isverbose, int isstrict){
     #define PATH_MAX 256
     #define EXTRA_SPACE 12

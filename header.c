@@ -43,7 +43,8 @@ int compute_checksum(FILE *tarfile) {
     int position;
     for (position = 0; position < HEADER_LENGTH; position++) {
         int c = getc(tarfile);
-        if (position > CHKSUM_OFFSET && position < CHKSUM_OFFSET + CHKSUM_LENGTH)
+        if (position > CHKSUM_OFFSET &&
+	    position < CHKSUM_OFFSET + CHKSUM_LENGTH)
             checksum += (int)(' ');
         else
             checksum += c;

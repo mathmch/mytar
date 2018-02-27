@@ -50,7 +50,8 @@ char *new_copy(char *str) {
 
 /* returns a new string from concatenating the three strings.
  * if a string is null, it is ignored in the copy string.
- * the result of this function must be freed later if it does not return null. */
+ * the result of this function must 
+ * be freed later if it does not return null. */
 char *concat(char *str1, char *str2, char *str3) {
     /* could use varargs here, but eh... */
     #define STR_COUNT 3
