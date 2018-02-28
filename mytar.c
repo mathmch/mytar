@@ -252,8 +252,10 @@ void find_listings(FILE *tarfile, char *paths[],
     char actual_path[MAX_PATH_LENGTH];
     
     get_path(actual_path, tarfile);
-    if(elements == 0)
+    if(elements == 0){
         list_contents(tarfile, actual_path, isverbose, isstrict);
+        return;
+    }
     while(actual_path[0] != '\0') {
 	listed = 0;
         for (i = 0; i < elements; i++) {
