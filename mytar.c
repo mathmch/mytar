@@ -31,15 +31,19 @@ void validate_command(int argc, char *argv[]){
     int length;
     int i;
     if(argc < 3){
-        printf("Usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+        fprintf(stderr, "Usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
         exit(EXIT_FAILURE);
     }
     length = strlen(argv[1]);
+    if(!strstr(argv[1], "f")){
+	fprintf(stderr, "Usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+        exit(EXIT_FAILURE);
+    }   
     for(i = 0; i < length; i++){
         if(argv[1][i] != 'c' && argv[1][i] != 't' &&
            argv[1][i] != 'x' && argv[1][i] != 'v' &&
            argv[1][i] != 'f' && argv[1][i] != 'S'){
-            printf("Usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+            fprintf(stderr, "Usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
             exit(EXIT_FAILURE);
         }
     }
