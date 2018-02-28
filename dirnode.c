@@ -7,7 +7,7 @@
 #include "util.h"
 
 dirnode *build_tree(char *path, char *prefix) {
-    #define FN_NAME "build_tree"
+#define FN_NAME "build_tree"
     struct stat sb;
     char *new_path;
     dirnode *tree = safe_malloc(sizeof(struct dirnode), FN_NAME);
@@ -29,35 +29,39 @@ dirnode *build_tree(char *path, char *prefix) {
     tree->child_count = 0;
 
     if (S_ISDIR(sb.st_mode)) {
+        int length;
         DIR *dir = opendir(path);
         struct dirent *entry;
         chdir(path);
         while ((entry = readdir(dir)) != NULL) {
             if (strcmp(entry->d_name, ".") == 0
-		|| strcmp(entry->d_name, "..") == 0)
+                || strcmp(entry->d_name, "..") == 0)
                 continue;
             tree->child_count++;
             tree->children =safe_realloc(tree->children,
-					 tree->child_count * sizeof(dirnode*),
-					 FN_NAME);
+                                         tree->child_count * sizeof(dirnode*),
+                                         FN_NAME);
             tree->children[tree->child_count-1] = build_tree(entry->d_name,
-							     new_path);
+                                                             new_path);
         }
         chdir("..");
 
-        /* directory, so add a slash to the path name end after recursing */
-        strcat(tree->path_name, "/");
+        /* directory, so add a slash to the path name end after recursing
+         (if it's not already there) */
+        length = (int)strlen(tree->path_name);
+        if (tree->path_name[length - 1] != '/')
+            strcat(tree->path_name, "/");
     }
 
     return tree;
 }
 
 /* only problem is this function puts / at the end of every path, even if
-   final spot is a file, not a dir. */
+ final spot is a file, not a dir. */
 void print_tree(dirnode *tree) {
     int i;
     if (!S_ISREG(tree->sb.st_mode) &&
-	!S_ISDIR(tree->sb.st_mode) && !S_ISLNK(tree->sb.st_mode)) {
+        !S_ISDIR(tree->sb.st_mode) && !S_ISLNK(tree->sb.st_mode)) {
         /* unsupported file type, does not go in the archive */
         return;
     }

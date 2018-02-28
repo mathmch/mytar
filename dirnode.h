@@ -2,8 +2,7 @@
 #define dirnode_h
 
 #include <sys/stat.h>
-
-#define PATH_MAX 256
+#include "header.h"
 
 typedef struct dirnode dirnode;
 struct dirnode {

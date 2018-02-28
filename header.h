@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #define BLOCK_LENGTH 512
+#define PATH_MAX 256
 #define MAGIC "ustar"
 #define VERSION "00"
 
@@ -47,5 +48,21 @@
 int validate_header(FILE *tarfile, int strict);
 
 int compute_checksum(FILE *tarfile);
+
+int is_dir(FILE *tarfile);
+
+int is_symlink(FILE *tarfile);
+
+void get_path(char buffer[], FILE *tarfile);
+
+mode_t get_mode(FILE *tarfile);
+
+off_t get_size(FILE *tarfile);
+
+time_t get_mtime(FILE *tarfile);
+
+void get_linkname(char buffer[], FILE *tarfile);
+
+int size_to_blocks(off_t size);
 
 #endif

@@ -28,47 +28,29 @@ void extract_file(FILE *tarfile, char *path, int isverbose, int isstrict) {
     struct utimbuf tm;
     int i;
     int fd;
-    int size;
+    off_t size;
     int blocks;
 
-    if(validate_header(tarfile, isstrict) != 0){
-	fprintf(stderr, "Invalid Header\n");
-	exit(EXIT_FAILURE);
+    if (validate_header(tarfile, isstrict) != 0) {
+        fprintf(stderr, "Invalid Header\n");
+        exit(EXIT_FAILURE);
     }
-    /* mode */
-    fseek(tarfile, MODE_OFFSET, SEEK_CUR);
-    fread(buffer, 1, MODE_LENGTH, tarfile);
-    mode = strtol(buffer, NULL, 8);
 
-    /* size */
-    fseek(tarfile, SIZE_OFFSET - MODE_LENGTH - MODE_OFFSET, SEEK_CUR);
-    fread(buffer, 1, SIZE_LENGTH, tarfile);
-    size = strtol(buffer, NULL, 8);
-
-    /* time */
-    fread(buffer, 1, MTIME_LENGTH, tarfile);
+    mode = get_mode(tarfile);
+    size = get_size(tarfile);
     tm.actime = time(NULL);
-    tm.modtime = strtol(buffer, NULL, 8);
+    tm.modtime = get_mtime(tarfile);
 
-    if(S_ISDIR(mode)){
+    if (is_dir(tarfile)) {
         traverse_path(path, 1);
-        if(mode & 0111){
-            if(mkdir(path, 0777) < 0)
-                perror(path);
+        if (mode & 0111) {
+            mkdir(path, 0777); /* ignore error if already exists */
+        } else {
+            mkdir(path, 0666); /* ignore error if already exists */
         }
-        else{
-            if(mkdir(path, 0666) < 0)
-                perror(path);
-        }
-        fseek(tarfile, BLOCK_LENGTH - MTIME_LENGTH - MTIME_OFFSET, SEEK_CUR);
-    } else if (S_ISLNK(mode)) {
-        fseek(tarfile, LINKNAME_OFFSET -
-	      MTIME_LENGTH - MTIME_OFFSET, SEEK_CUR);
-        fread(buffer, 1, LINKNAME_LENGTH, tarfile);
-        buffer[LINKNAME_LENGTH] = '\0';
+    } else if (is_symlink(tarfile)) {
+        get_linkname(buffer, tarfile);
         symlink(buffer, path);
-        fseek(tarfile, BLOCK_LENGTH -
-	      LINKNAME_OFFSET - LINKNAME_LENGTH, SEEK_CUR);
     } else {
         traverse_path(path, 0);
         if(mode & 0111){
@@ -79,27 +61,27 @@ void extract_file(FILE *tarfile, char *path, int isverbose, int isstrict) {
             if((fd = creat(path, 0666)) < 0)
                 perror(path);
         }
-        fseek(tarfile, BLOCK_LENGTH - MTIME_OFFSET - MTIME_LENGTH, SEEK_CUR);
-        if(size % BLOCK_LENGTH == 0)
-            blocks = (size/BLOCK_LENGTH)*BLOCK_LENGTH;
-        else
-            blocks = (size/BLOCK_LENGTH)*BLOCK_LENGTH + 1;
+        blocks = size_to_blocks(size);
         /* writes the file */
-        for(i = 0; i < blocks; i++){
+        for (i = 0; i < blocks; i++) {
             fread(buffer, 1, BLOCK_LENGTH, tarfile);
-            if(i == blocks - 1) /* last block */
+            if (i == blocks - 1) /* last block */
                 write(fd, buffer, size % BLOCK_LENGTH);
             else
                 write(fd, buffer, BLOCK_LENGTH);
         }
         close(fd);
     }
+
     utime(path, &tm);
-    if(isverbose)
-	printf("%s\n", path);
-    if(S_ISDIR(mode)){
+
+    fseek(tarfile, BLOCK_LENGTH, SEEK_CUR); /* jump to next header */
+    if (isverbose)
+        printf("%s\n", path);
+    if (is_dir(tarfile)) {
+        int path_length = (int)strlen(path);
         get_path(buffer, tarfile);
-        while (strncmp(buffer, path, strlen(path)) == 0) {
+        while (strncmp(buffer, path, path_length) == 0) {
             extract_file(tarfile, buffer, isverbose, isstrict);
             get_path(buffer, tarfile);
         }
@@ -148,8 +130,7 @@ void find_archives(FILE *tarfile, char *paths[],
         if (!extracted) {
             /* extraction moves us along in the tarfile,
              but if we don't extract, we have to go forward anyway */
-            mode_t mode = get_mode(tarfile);
-            off_t size = S_ISDIR(mode) ? 0 : get_size(tarfile);
+            off_t size = is_dir(tarfile) ? 0 : get_size(tarfile);
             int blocks = size_to_blocks(size);
             /* +1 for the header block */
             fseek(tarfile, BLOCK_LENGTH * (blocks + 1), SEEK_CUR);
@@ -157,11 +138,11 @@ void find_archives(FILE *tarfile, char *paths[],
 
         get_path(actual_path, tarfile);
     }
+
     for(i = 0; i < elements; i++){
-	if(paths[i] != NULL)
-	    printf("Could not extract: %s\n", paths[i]);
+        if (paths[i] != NULL)
+            printf("Could not extract: %s\n", paths[i]);
     }
-    
 }
 
 void traverse_path(char *path, int is_dir){

@@ -52,3 +52,76 @@ int compute_checksum(FILE *tarfile) {
     fseek(tarfile, -HEADER_LENGTH, SEEK_CUR);
     return checksum;
 }
+
+/* assume at start of header, resets to start of header */
+int is_dir(FILE *tarfile) {
+    char buffer[NAME_LENGTH + 1];
+    fread(buffer, 1, NAME_LENGTH, tarfile);
+    buffer[NAME_LENGTH] = '\0';
+    fseek(tarfile, -NAME_LENGTH, SEEK_CUR);
+    return buffer[strlen(buffer) - 1] == '/';
+}
+
+/* assume at start of header, resets to start of header */
+int is_symlink(FILE *tarfile) {
+    char linkname_start;
+    fseek(tarfile, LINKNAME_OFFSET, SEEK_CUR);
+    fread(&linkname_start, 1, 1, tarfile);
+    fseek(tarfile, -LINKNAME_OFFSET - 1, SEEK_CUR);
+    return linkname_start != '\0';
+}
+
+/* assume at start of header, resets to start of header */
+void get_path(char buffer[], FILE *tarfile) {
+    char name[NAME_LENGTH + 1];
+    fseek(tarfile, PREFIX_OFFSET, SEEK_CUR);
+    fread(buffer, 1, PREFIX_LENGTH, tarfile);
+    if(buffer[0] != 0)
+        strcat(buffer, "/");
+    fseek(tarfile, -PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
+    fread(name, 1, NAME_LENGTH, tarfile);
+    name[NAME_LENGTH] = '\0';
+    strcat(buffer, name);
+    fseek(tarfile, -NAME_LENGTH, SEEK_CUR);
+}
+
+/* assume at start of header, resets to start of header */
+mode_t get_mode(FILE *tarfile) {
+    char buffer[MODE_LENGTH];
+    fseek(tarfile, MODE_OFFSET, SEEK_CUR);
+    fread(buffer, 1, MODE_LENGTH, tarfile);
+    fseek(tarfile, -MODE_OFFSET - MODE_LENGTH, SEEK_CUR);
+    return strtol(buffer, NULL, 8);
+}
+
+/* assume at start of header, resets to start of header */
+off_t get_size(FILE *tarfile) {
+    char buffer[SIZE_LENGTH];
+    fseek(tarfile, SIZE_OFFSET, SEEK_CUR);
+    fread(buffer, 1, SIZE_LENGTH, tarfile);
+    fseek(tarfile, -SIZE_OFFSET - SIZE_LENGTH, SEEK_CUR);
+    return strtol(buffer, NULL, 8);
+}
+
+/* assume at start of header, resets to start of header */
+time_t get_mtime(FILE *tarfile) {
+    char buffer[MTIME_LENGTH];
+    fseek(tarfile, MTIME_OFFSET, SEEK_CUR);
+    fread(buffer, 1, MTIME_LENGTH, tarfile);
+    fseek(tarfile, -MTIME_LENGTH - MTIME_OFFSET, SEEK_CUR);
+    return strtol(buffer, NULL, 8);
+}
+
+/* assume at start of header, resets to start of header */
+void get_linkname(char buffer[], FILE *tarfile) {
+    fseek(tarfile, LINKNAME_OFFSET, SEEK_CUR);
+    fread(buffer, 1, LINKNAME_LENGTH, tarfile);
+    fseek(tarfile, -LINKNAME_LENGTH - LINKNAME_OFFSET, SEEK_CUR);
+}
+
+int size_to_blocks(off_t size) {
+    if (size % BLOCK_LENGTH == 0)
+        return (int)(size / BLOCK_LENGTH);
+    else
+        return (int)((size / BLOCK_LENGTH) + 1);
+}

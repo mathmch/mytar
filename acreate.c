@@ -10,8 +10,6 @@
 #include "acreate.h"
 #include "header.h"
 
-#define PATH_MAX 256
-
 void archive(char *file_name, dirnode *tree) {
     FILE *file;
     char buffer[BLOCK_LENGTH];
@@ -40,6 +38,7 @@ void archive_helper(FILE *file, dirnode *tree) {
 }
 
 void write_header(FILE *archive, dirnode *tree) {
+    #define MODE_PERMS(x) ((x) & 0777)
     int length;
     char *name;
     char buffer[HEADER_LENGTH], prefix[PREFIX_LENGTH];
@@ -53,8 +52,8 @@ void write_header(FILE *archive, dirnode *tree) {
         return; /* TODO: handle the error here some how? */
     write_and_pad(buffer, NAME_LENGTH, archive);
 
-    /* mode */
-    sprintf(buffer, "%07o", tree->sb.st_mode);
+    /* mode, including only the permission bits */
+    sprintf(buffer, "%07o", MODE_PERMS(tree->sb.st_mode));
     write_and_pad(buffer, MODE_LENGTH, archive);
 
     /* uid */

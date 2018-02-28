@@ -16,7 +16,7 @@
 #define NON_VERBOSE 0
 void validate_command(int argc, char *argv[]);
 int execute_command(int argc, char *argv[]);
-void list_contents(FILE* tarfile, char path[],  int isverbose, int isstrict);
+void list_contents(FILE* tarfile, int isverbose, int isstrict);
 void get_permissions(char permissions[], mode_t mode);
 void get_owner(uid_t uid, gid_t gid, char owner[]);
 void get_time(time_t time, char timestr[]);
@@ -102,9 +102,8 @@ int execute_command(int argc, char *argv[]){
 }
 
 /* mode = 0 for standard, verbose otherwise */
-void list_contents(FILE* tarfile, char path[],  int isverbose, int isstrict){
-    #define PATH_MAX 256
-    #define EXTRA_SPACE 12
+void list_contents(FILE* tarfile, int isverbose, int isstrict){
+    #define EXTRA_SPACE (BLOCK_LENGTH - HEADER_LENGTH)
     #define PERMISSION_WIDTH 11 
     #define OWNER_WIDTH 17
     #define TIME_WIDTH 16
@@ -114,7 +113,8 @@ void list_contents(FILE* tarfile, char path[],  int isverbose, int isstrict){
     time_t time;
     char timestr[TIME_WIDTH];
     char owner[OWNER_WIDTH];
-    char buffer[PATH_MAX];
+    char path[PATH_MAX];
+    char buffer[NAME_LENGTH];
     char permissions[PERMISSION_WIDTH];
     mode_t mode;
     buffer[0] = '\0';
@@ -123,13 +123,28 @@ void list_contents(FILE* tarfile, char path[],  int isverbose, int isstrict){
 	fprintf(stderr, "Invalid Header\n");
 	exit(EXIT_FAILURE);
     }
-    mode = get_mode(tarfile);
+    fseek(tarfile, MODE_OFFSET, SEEK_CUR);
+    fread(buffer, 1, MODE_LENGTH, tarfile);
+    mode = strtol(buffer, NULL, 8);
     /* get size */
-    size = get_size(tarfile);
+    fseek(tarfile, SIZE_OFFSET - MODE_OFFSET - MODE_LENGTH, SEEK_CUR);
+    fread(buffer, 1, SIZE_LENGTH, tarfile);
+    size = strtol(buffer, NULL, 8);
+    /* get name */
+    fseek(tarfile, - SIZE_OFFSET - SIZE_LENGTH, SEEK_CUR);
+    fread(buffer, 1, NAME_LENGTH, tarfile);
+    /* get prefix */
+    fseek(tarfile, PREFIX_OFFSET - NAME_LENGTH, SEEK_CUR);
+    fread(path, 1, PREFIX_LENGTH, tarfile);
+    /* make full path */
+    strcat(path, buffer);
     if(isverbose){
 	/* verbose print */
+	fseek(tarfile, MODE_OFFSET - PREFIX_OFFSET -
+	      PREFIX_LENGTH, SEEK_CUR);
+	fread(permissions, 1, MODE_LENGTH, tarfile);
 	get_permissions(permissions, mode);
-	fseek(tarfile, UID_OFFSET, SEEK_CUR);
+
 	fread(owner, 1, UID_LENGTH, tarfile);
 	uid = strtol(owner, NULL, 8);
 	fread(owner, 1, GID_LENGTH, tarfile);
@@ -144,13 +159,14 @@ void list_contents(FILE* tarfile, char path[],  int isverbose, int isstrict){
 	printf("%10s %17s %8d %16s %s\n", permissions, owner,
 	       size, timestr, path);
 
-	fseek(tarfile, BLOCK_LENGTH  -
+	fseek(tarfile, PREFIX_OFFSET + PREFIX_LENGTH -
 	      MTIME_OFFSET - MTIME_LENGTH, SEEK_CUR); 
     }else{
 	/* standard print */
 	puts(path);
-	fseek(tarfile, BLOCK_LENGTH, SEEK_CUR);
     }
+    /* go to end of block */
+    fseek(tarfile, EXTRA_SPACE, SEEK_CUR);
     /* go to next header */
     if(!S_ISDIR(mode)){
 	if(size % BLOCK_LENGTH == 0)
@@ -162,7 +178,7 @@ void list_contents(FILE* tarfile, char path[],  int isverbose, int isstrict){
     if(S_ISDIR(mode)){
         get_path(buffer, tarfile);
         while (strncmp(buffer, path, strlen(path)) == 0) {
-            list_contents(tarfile, buffer, isverbose, isstrict);
+            list_contents(tarfile, isverbose, isstrict);
             get_path(buffer, tarfile);
 	    if(buffer[0] == '\0')
 		return;
@@ -253,17 +269,14 @@ void find_listings(FILE *tarfile, char *paths[],
     char actual_path[MAX_PATH_LENGTH];
     
     get_path(actual_path, tarfile);
-    if(elements == 0){
-        list_contents(tarfile, actual_path, isverbose, isstrict);
-	return;
-    }
-    while(actual_path[0] != '\0') {
-	listed = 0;
+    if(elements == 0)
+        list_contents(tarfile, isverbose, isstrict);
+    while(actual_path[0] != '\0' && listed != elements) {
         for (i = 0; i < elements; i++) {
             if (paths[i] == NULL)
                 continue;
             if (strcmp(actual_path, paths[i]) == 0) {
-                list_contents(tarfile, actual_path, isverbose, isstrict);
+                list_contents(tarfile, isverbose, isstrict);
                 listed++;
                 paths[i] = NULL; /* don't search for this path again */
             } else {
@@ -274,7 +287,7 @@ void find_listings(FILE *tarfile, char *paths[],
                     && strlen(paths[i]) == path_length - 1
                     && strncmp(actual_path, paths[i],
 			       path_length - 1) == 0) {
-                    list_contents(tarfile, actual_path, isverbose, isstrict);
+                    list_contents(tarfile, isverbose, isstrict);
                     listed++;
                     paths[i] = NULL; /* don't search for this path again */
                 }

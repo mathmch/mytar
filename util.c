@@ -81,13 +81,6 @@ char *concat(char *str1, char *str2, char *str3) {
     return new;
 }
 
-int size_to_blocks(off_t size) {
-    if (size % BLOCK_LENGTH == 0)
-        return (int)(size / BLOCK_LENGTH);
-    else
-        return (int)((size / BLOCK_LENGTH) + 1);
-}
-
 int count_occur(char *path, char c){
     int i;
     int count = 0;;
@@ -96,36 +89,4 @@ int count_occur(char *path, char c){
 	    count++;
     }
     return count;
-}
-
-/* assume at start of header, resets to start of header */
-void get_path(char buffer[], FILE *tarfile) {
-    char name[NAME_LENGTH + 1];
-    fseek(tarfile, PREFIX_OFFSET, SEEK_CUR);
-    fread(buffer, 1, PREFIX_LENGTH, tarfile);
-    if(buffer[0] != 0)
-	strcat(buffer, "/");
-    fseek(tarfile, -PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
-    fread(name, 1, NAME_LENGTH, tarfile);
-    name[NAME_LENGTH] = '\0';
-    strcat(buffer, name);
-    fseek(tarfile, -NAME_LENGTH, SEEK_CUR);
-}
-
-/* assume at start of header, resets to start of header */
-mode_t get_mode(FILE *tarfile) {
-    char buffer[MODE_LENGTH];
-    fseek(tarfile, MODE_OFFSET, SEEK_CUR);
-    fread(buffer, 1, MODE_LENGTH, tarfile);
-    fseek(tarfile, -MODE_OFFSET - MODE_LENGTH, SEEK_CUR);
-    return strtol(buffer, NULL, 8);
-}
-
-/* assume at start of header, resets to start of header */
-off_t get_size(FILE *tarfile) {
-    char buffer[SIZE_LENGTH];
-    fseek(tarfile, SIZE_OFFSET, SEEK_CUR);
-    fread(buffer, 1, SIZE_LENGTH, tarfile);
-    fseek(tarfile, -SIZE_OFFSET - SIZE_LENGTH, SEEK_CUR);
-    return strtol(buffer, NULL, 8);
 }
