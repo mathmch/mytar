@@ -114,7 +114,7 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     time_t time;
     char timestr[TIME_WIDTH];
     char owner[OWNER_WIDTH];
-    char buffer[NAME_LENGTH];
+    char buffer[PATH_MAX];
     char permissions[PERMISSION_WIDTH];
     mode_t mode;
     buffer[0] = '\0';
@@ -155,8 +155,10 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
 	blocks = size_to_blocks(size);
         fseek(tarfile, blocks * BLOCK_LENGTH + BLOCK_LENGTH, SEEK_CUR);
     }
-    if(is_dir(tarfile)){
-        fseek(tarfile, BLOCK_LENGTH, SEEK_CUR);
+   
+    /* next entry */
+    else{
+	fseek(tarfile, BLOCK_LENGTH, SEEK_CUR);
         get_path(buffer, tarfile);
         while (strncmp(buffer, path, strlen(path)) == 0) {
             list_contents(tarfile, buffer, isverbose, isstrict);
