@@ -18,7 +18,7 @@ void validate_command(int argc, char *argv[]);
 int execute_command(int argc, char *argv[]);
 void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict);
 void get_permissions(char permissions[], mode_t mode, FILE *tarfile);
-void get_owner(uid_t uid, gid_t gid, char owner[]);
+void get_owner(uid_t uid, char uname[], gid_t gid, char gname[], char owner[]);
 void get_time(time_t time, char timestr[]);
 void find_listings(FILE *tarfile, char *paths[],
 		   int elements, int isverbose, int isstrict);          
@@ -112,6 +112,8 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     gid_t gid;
     int blocks;
     time_t time;
+    char gname[GNAME_LENGTH];
+    char uname[UNAME_LENGTH];
     char timestr[TIME_WIDTH];
     char owner[OWNER_WIDTH];
     char buffer[PATH_MAX];
@@ -130,19 +132,25 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     if(isverbose){
 	/* verbose print */
 	get_permissions(permissions, mode, tarfile);
+	
 	fseek(tarfile, UID_OFFSET, SEEK_CUR);
 	fread(owner, 1, UID_LENGTH, tarfile);
 	uid = strtol(owner, NULL, 8);
 	fread(owner, 1, GID_LENGTH, tarfile);
 	gid = strtol(owner, NULL, 8);
-	get_owner(uid, gid, owner);
+	fseek(tarfile, -GID_OFFSET - GID_LENGTH, SEEK_CUR);
+	fseek(tarfile, UNAME_OFFSET, SEEK_CUR);
+	fread(uname, 1, UNAME_LENGTH, tarfile);
+	fread(gname, 1, GNAME_LENGTH, tarfile);
+	fseek(tarfile, -GNAME_LENGTH - GNAME_OFFSET, SEEK_CUR);
+	get_owner(uid, uname, gid, gname, owner);
 
-	fseek(tarfile, SIZE_LENGTH, SEEK_CUR);
+	fseek(tarfile, MTIME_OFFSET, SEEK_CUR);
 	fread(buffer, 1, MTIME_LENGTH, tarfile);
 	time = strtol(buffer, NULL, 8);
 	get_time(time, timestr);
 
-	printf("%10s %17s %8d %16s %s\n", permissions, owner,
+	printf("%10s %-17s %8d %16s %s\n", permissions, owner,
 	       size, timestr, path);
 
 	fseek(tarfile, -MTIME_OFFSET - MTIME_LENGTH, SEEK_CUR); 
@@ -198,29 +206,27 @@ void get_permissions(char permissions[], mode_t mode, FILE *tarfile){
     permissions[10] = '\0';
 }
 /* figure out how to handled name lengths */
-void get_owner(uid_t uid, gid_t gid, char owner[]){
+void get_owner(uid_t uid, char uname[], gid_t gid, char gname[], char owner[]){
     #define OWNER_WIDTH 17
     #define MAX_NAME_LENGTH 8
     #define USER_NAME_LENGTH 32
     char buffer[USER_NAME_LENGTH];
-    struct group *gr;
-    struct passwd *pw;
     owner[0] = '\0';
-    if((pw = getpwuid(uid)) == NULL){
+    if(uname[0] == '\0'){
 	sprintf(buffer, "%d", uid);
 	strcat(owner, buffer);
     }
     else{
-	snprintf(buffer, MAX_NAME_LENGTH, "%s", pw->pw_name);
+	snprintf(buffer, MAX_NAME_LENGTH, "%s", uname);
 	strcat(owner, buffer);
     }
     strcat(owner, "/");
-    if((gr = getgrgid(gid)) == NULL){
+    if(gname[0] == '\0'){
 	sprintf(buffer, "%d", gid);
 	strcat(owner, buffer);
     }
     else{
-	snprintf(buffer, MAX_NAME_LENGTH, "%s", gr->gr_name);
+	snprintf(buffer, MAX_NAME_LENGTH, "%s", gname);
 	strcat(owner, buffer);
     }
 }
