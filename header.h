@@ -2,6 +2,7 @@
 #define header_h
 
 #include <stdio.h>
+#include <sys/types.h>
 
 #define BLOCK_LENGTH 512
 #define PATH_MAX 256
