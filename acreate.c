@@ -208,7 +208,7 @@ int split_path(char *path, char *prefix, char *name) {
 
 void write_contents(FILE *archive, dirnode *tree) {
     FILE *file;
-    char buffer[BLOCK_LENGTH];
+    char buffer[BLOCK_LENGTH + 1];
     size_t length;
     if ((file = fopen(tree->path_name, "r")) == NULL) {
         /* TODO: handle error here */
@@ -216,6 +216,7 @@ void write_contents(FILE *archive, dirnode *tree) {
     }
 
     while ((length = fread(buffer, 1, BLOCK_LENGTH, file)) > 0) {
+        buffer[length] = '\0';
         write_and_pad(buffer, BLOCK_LENGTH, archive);
     }
 
