@@ -76,7 +76,8 @@ void get_path(char buffer[], FILE *tarfile) {
     char name[NAME_LENGTH + 1];
     fseek(tarfile, PREFIX_OFFSET, SEEK_CUR);
     fread(buffer, 1, PREFIX_LENGTH, tarfile);
-    if(buffer[0] != 0)
+    buffer[PREFIX_LENGTH + 1] = '\0';
+    if(buffer[0] != '\0' && buffer[strlen(buffer) - 1] != '/')
         strcat(buffer, "/");
     fseek(tarfile, -PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
     fread(name, 1, NAME_LENGTH, tarfile);
