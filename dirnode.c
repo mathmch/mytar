@@ -19,8 +19,10 @@ dirnode *build_tree(char *path, char *prefix) {
 
     if (prefix == NULL) {
         new_path = path;
-    } else {
+    } else if (prefix[strlen(prefix) - 1] != '/') {
         new_path = concat(prefix, "/", path);
+    } else {
+        new_path = concat(prefix, path, NULL);
     }
 
     strcpy(tree->path_name, new_path);
@@ -29,7 +31,7 @@ dirnode *build_tree(char *path, char *prefix) {
     tree->child_count = 0;
 
     if (S_ISDIR(sb.st_mode)) {
-        int length;
+
         DIR *dir = opendir(path);
         struct dirent *entry;
         chdir(path);
@@ -48,8 +50,7 @@ dirnode *build_tree(char *path, char *prefix) {
 
         /* directory, so add a slash to the path name end after recursing
          (if it's not already there) */
-        length = (int)strlen(tree->path_name);
-        if (tree->path_name[length - 1] != '/')
+        if (tree->path_name[strlen(tree->path_name) - 1] != '/')
             strcat(tree->path_name, "/");
     }
 
