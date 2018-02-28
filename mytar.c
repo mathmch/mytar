@@ -283,8 +283,7 @@ void find_listings(FILE *tarfile, char *paths[],
         if (!listed) {
             /* extraction moves us along in the tarfile,
              but if we don't extract, we have to go forward anyway */
-            mode_t mode = get_mode(tarfile);
-            off_t size = S_ISDIR(mode) ? 0 : get_size(tarfile);
+            off_t size = is_dir(tarfile) ? 0 : get_size(tarfile);
             int blocks = size_to_blocks(size);
             /* +1 for the header block */
             fseek(tarfile, BLOCK_LENGTH * (blocks + 1), SEEK_CUR);
