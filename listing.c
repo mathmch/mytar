@@ -110,7 +110,6 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     mode = get_mode(tarfile);
     size = get_size(tarfile);
     if (isverbose){
-<<<<<<< HEAD
 	/* verbose print */
 	get_permissions(permissions, mode, tarfile);
 	
@@ -130,7 +129,6 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
 	safe_fread(buffer, 1, MTIME_LENGTH, tarfile);
 	time = strtol(buffer, NULL, 8);
 	get_time(time, timestr);
-=======
     /* verbose print */
     get_permissions(permissions, mode, tarfile);
     
@@ -150,7 +148,6 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     fread(buffer, 1, MTIME_LENGTH, tarfile);
     time = strtol(buffer, NULL, 8);
     get_time(time, timestr);
->>>>>>> 1bc005a48974ec5950fc89c7eaf7114de5e76350
 
     printf("%10s %-17s %8d %16s %s\n", permissions, owner,
            size, timestr, path);
