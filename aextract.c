@@ -75,11 +75,12 @@ void extract_file(FILE *tarfile, char *path, int isverbose, int isstrict) {
 
     utime(path, &tm);
 
-    fseek(tarfile, BLOCK_LENGTH, SEEK_CUR); /* jump to next header */
     if (isverbose)
         printf("%s\n", path);
     if (is_dir(tarfile)) {
-        int path_length = (int)strlen(path);
+        int path_length;
+        fseek(tarfile, BLOCK_LENGTH, SEEK_CUR); /* jump to next header */
+        path_length = (int)strlen(path);
         get_path(buffer, tarfile);
         while (strncmp(buffer, path, path_length) == 0) {
             extract_file(tarfile, buffer, isverbose, isstrict);
