@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "util.h"
 
 /* assuming at the start of the header, validate it by checking
  * magic number (+ null if strict), version (if strict), and checksum.

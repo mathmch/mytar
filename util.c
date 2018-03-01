@@ -47,7 +47,7 @@ size_t safe_fread(char buffer[], int size, int nmemb, FILE *file) {
 }
 
 void safe_fwrite(char buffer[], int size, int nmemb, FILE *file) {
-
+    
 }
 
 /* returns a newly malloced copy of the string */
