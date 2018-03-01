@@ -158,7 +158,7 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
 void find_listings(FILE *tarfile, char *paths[],
 		   int elements, int verbose, int strict) {
     char actual_path[PATH_MAX];
-    int path_length, listed, i;
+    int i;
     
     get_path(actual_path, tarfile);
     if(elements == 0){
@@ -168,7 +168,7 @@ void find_listings(FILE *tarfile, char *paths[],
         }
     }
     while(actual_path[0] != '\0') {
-        listed = 0;
+        int listed = 0;
         for (i = 0; i < elements; i++) {
             if (paths[i] == NULL)
                 continue;
@@ -179,11 +179,12 @@ void find_listings(FILE *tarfile, char *paths[],
             } else {
                 /* check if they named a directory without
                  putting a '/' at the end */
-                path_length = (int)strlen(actual_path);
-                if (actual_path[path_length - 1] == '/'
-                    && strlen(paths[i]) == path_length - 1
-                    && strncmp(actual_path, paths[i],
-                               path_length - 1) == 0) {
+                int path_length = (int)strlen(actual_path);
+                int ends_with_slash = actual_path[path_length - 1] == '/';
+                int lengths_match = strlen(paths[i]) == path_length - 1;
+                int paths_match = strncmp(actual_path, paths[i],
+                                          path_length - 1) == 0;
+                if (ends_with_slash && lengths_match && paths_match) {
                         list_contents(tarfile, actual_path, verbose, strict);
                         listed++;
                         paths[i] = NULL; /* don't search for this path again */
@@ -192,8 +193,8 @@ void find_listings(FILE *tarfile, char *paths[],
         }
 
         if (!listed) {
-            /* extraction moves us along in the tarfile,
-             but if we don't extract, we have to go forward anyway */
+            /* listing moves us along in the tarfile,
+             but if we don't list, we have to go forward anyway */
             off_t size = is_dir(tarfile) ? 0 : get_size(tarfile);
             int blocks = size_to_blocks(size);
             /* +1 for the header block */
@@ -202,9 +203,11 @@ void find_listings(FILE *tarfile, char *paths[],
 
         get_path(actual_path, tarfile);
     }
-    for(i = 0; i < elements; i++){
-        if(paths[i] != NULL)
-            printf("Could not list: %s\n", paths[i]);
+
+    for (i = 0; i < elements; i++) {
+        /* print elements failed to list */
+        if (paths[i] != NULL)
+            fprintf(stderr, "Could not list: %s\n", paths[i]);
     }
 }
 
