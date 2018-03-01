@@ -21,9 +21,9 @@ void get_permissions(char permissions[], mode_t mode, FILE *tarfile){
     #define O_W 8
     #define O_X 9
     if (is_dir(tarfile))
-    permissions[TYPE] = 'd';
+	permissions[TYPE] = 'd';
     else if (is_symlink(tarfile))
-    permissions[TYPE] = 'l';
+	permissions[TYPE] = 'l';
     else
         permissions[TYPE] = '-';
     permissions[U_R] = (mode & S_IRUSR) ? 'r' : '-';
@@ -46,21 +46,21 @@ void get_owner(uid_t uid, char uname[], gid_t gid, char gname[], char owner[]){
     char buffer[USER_NAME_LENGTH];
     owner[0] = '\0';
     if (uname[0] == '\0'){
-    sprintf(buffer, "%d", uid);
-    strcat(owner, buffer);
+	sprintf(buffer, "%d", uid);
+	strcat(owner, buffer);
     }
     else{
-    snprintf(buffer, MAX_NAME_LENGTH, "%s", uname);
-    strcat(owner, buffer);
+	snprintf(buffer, MAX_NAME_LENGTH, "%s", uname);
+	strcat(owner, buffer);
     }
     strcat(owner, "/");
     if (gname[0] == '\0'){
-    sprintf(buffer, "%d", gid);
-    strcat(owner, buffer);
+	sprintf(buffer, "%d", gid);
+	strcat(owner, buffer);
     }
     else{
-    snprintf(buffer, MAX_NAME_LENGTH, "%s", gname);
-    strcat(owner, buffer);
+	snprintf(buffer, MAX_NAME_LENGTH, "%s", gname);
+	strcat(owner, buffer);
     }
 }
 
@@ -103,8 +103,8 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     buffer[0] = '\0';
     /* get permissions */
     if (validate_header(tarfile, isstrict) != 0){
-    fprintf(stderr, "Invalid Header\n");
-    exit(EXIT_FAILURE);
+	fprintf(stderr, "Invalid Header\n");
+	exit(EXIT_FAILURE);
     }
     
     mode = get_mode(tarfile);
@@ -114,71 +114,52 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
 	get_permissions(permissions, mode, tarfile);
 	
 	fseek(tarfile, UID_OFFSET, SEEK_CUR);
-	safe_fread(owner, 1, UID_LENGTH, tarfile);
+	fread(owner, 1, UID_LENGTH, tarfile);
 	uid = strtol(owner, NULL, 8);
-	safe_fread(owner, 1, GID_LENGTH, tarfile);
+	fread(owner, 1, GID_LENGTH, tarfile);
 	gid = strtol(owner, NULL, 8);
 	fseek(tarfile, -GID_OFFSET - GID_LENGTH, SEEK_CUR);
 	fseek(tarfile, UNAME_OFFSET, SEEK_CUR);
-	safe_fread(uname, 1, UNAME_LENGTH, tarfile);
-	safe_fread(gname, 1, GNAME_LENGTH, tarfile);
+	fread(uname, 1, UNAME_LENGTH, tarfile);
+	fread(gname, 1, GNAME_LENGTH, tarfile);
 	fseek(tarfile, -GNAME_LENGTH - GNAME_OFFSET, SEEK_CUR);
 	get_owner(uid, uname, gid, gname, owner);
 
 	fseek(tarfile, MTIME_OFFSET, SEEK_CUR);
-	safe_fread(buffer, 1, MTIME_LENGTH, tarfile);
+	fread(buffer, 1, MTIME_LENGTH, tarfile);
 	time = strtol(buffer, NULL, 8);
 	get_time(time, timestr);
-    /* verbose print */
-    get_permissions(permissions, mode, tarfile);
-    
-    fseek(tarfile, UID_OFFSET, SEEK_CUR);
-    fread(owner, 1, UID_LENGTH, tarfile);
-    uid = strtol(owner, NULL, 8);
-    fread(owner, 1, GID_LENGTH, tarfile);
-    gid = strtol(owner, NULL, 8);
-    fseek(tarfile, -GID_OFFSET - GID_LENGTH, SEEK_CUR);
-    fseek(tarfile, UNAME_OFFSET, SEEK_CUR);
-    fread(uname, 1, UNAME_LENGTH, tarfile);
-    fread(gname, 1, GNAME_LENGTH, tarfile);
-    fseek(tarfile, -GNAME_LENGTH - GNAME_OFFSET, SEEK_CUR);
-    get_owner(uid, uname, gid, gname, owner);
 
-    fseek(tarfile, MTIME_OFFSET, SEEK_CUR);
-    fread(buffer, 1, MTIME_LENGTH, tarfile);
-    time = strtol(buffer, NULL, 8);
-    get_time(time, timestr);
+	printf("%10s %-17s %8d %16s %s\n", permissions, owner,
+	       size, timestr, path);
 
-    printf("%10s %-17s %8d %16s %s\n", permissions, owner,
-           size, timestr, path);
-
-    fseek(tarfile, -MTIME_OFFSET - MTIME_LENGTH, SEEK_CUR); 
+	fseek(tarfile, -MTIME_OFFSET - MTIME_LENGTH, SEEK_CUR); 
     }else{
-    /* standard print */
-    puts(path);
+	/* standard print */
+	puts(path);
     }
     
     /* go to next header */
     if (!is_dir(tarfile)){
-    blocks = size_to_blocks(size);
+	blocks = size_to_blocks(size);
         fseek(tarfile, blocks * BLOCK_LENGTH + BLOCK_LENGTH, SEEK_CUR);
     }
    
     /* next entry */
     else{
-    fseek(tarfile, BLOCK_LENGTH, SEEK_CUR);
+	fseek(tarfile, BLOCK_LENGTH, SEEK_CUR);
         get_path(buffer, tarfile);
         while (strncmp(buffer, path, strlen(path)) == 0) {
             list_contents(tarfile, buffer, isverbose, isstrict);
             get_path(buffer, tarfile);
-        if (buffer[0] == '\0')
-        return;
+	    if (buffer[0] == '\0')
+		return;
         }
     }
 }
 
 void find_listings(FILE *tarfile, char *paths[],
-           int elements, int isverbose, int isstrict){
+		   int elements, int isverbose, int isstrict){
     #define MAX_PATH_LENGTH 256
     #define MAX_FIELD_LENGTH 155
     int i;
@@ -188,13 +169,13 @@ void find_listings(FILE *tarfile, char *paths[],
     
     get_path(actual_path, tarfile);
     if (elements == 0){
-    while (actual_path[0] != '\0') {
-        list_contents(tarfile, actual_path, isverbose, isstrict);
-        get_path(actual_path, tarfile);
+	while (actual_path[0] != '\0') {
+	    list_contents(tarfile, actual_path, isverbose, isstrict);
+	    get_path(actual_path, tarfile);
+	}
     }
-    }
     while (actual_path[0] != '\0') {
-    listed = 0;
+	listed = 0;
         for (i = 0; i < elements; i++) {
             if (paths[i] == NULL)
                 continue;
@@ -204,12 +185,12 @@ void find_listings(FILE *tarfile, char *paths[],
                 paths[i] = NULL; /* don't search for this path again */
             } else {
                 /* check if they named a directory without 
-           putting a '/' at the end */
+		   putting a '/' at the end */
                 path_length = (int)strlen(actual_path);
                 if (actual_path[path_length - 1] == '/'
                     && strlen(paths[i]) == path_length - 1
                     && strncmp(actual_path, paths[i],
-                   path_length - 1) == 0) {
+			       path_length - 1) == 0) {
                     list_contents(tarfile, actual_path, isverbose, isstrict);
                     listed++;
                     paths[i] = NULL; /* don't search for this path again */
@@ -230,9 +211,8 @@ void find_listings(FILE *tarfile, char *paths[],
     }
     /* check if any paths could not be listed */
     for(i = 0; i < elements; i++){
-    if(paths[i] != NULL)
-        printf("Could not list: %s\n", paths[i]);
+	if(paths[i] != NULL)
+	    printf("Could not list: %s\n", paths[i]);
     }
     
 }
-
