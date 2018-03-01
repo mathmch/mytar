@@ -245,7 +245,7 @@ void get_time(time_t time, char timestr[]){
     day = tm->tm_mday;
     hour = tm->tm_hour;
     min = tm->tm_min;
-    sprintf(timestr, "%d-%d-%d %d:%d", year, month, day, hour, min);   
+    sprintf(timestr, "%d-%02d-%02d %02d:%02d", year, month, day, hour, min);   
 }
 
 void find_listings(FILE *tarfile, char *paths[],
