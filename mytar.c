@@ -50,7 +50,6 @@ void validate_command(int argc, char *argv[]){
 int execute_command(int argc, char *argv[]){
     FILE *tarfile;
     int i;
-    dirnode *tree;
     int isverbose;
     int isstrict;
     char **paths;
@@ -58,27 +57,20 @@ int execute_command(int argc, char *argv[]){
     paths = (char**)malloc(sizeof(char*)*(argc-2));
     isverbose = (strstr(argv[1], "v") != 0) ? VERBOSE : NON_VERBOSE;
     isstrict = (strstr(argv[1], "S") != 0) ? STRICT: NON_STRICT;
-    
-    if(strstr(argv[1], "c")){
-	/* TODO: figure out what strict should do, if anything */
-	if((tarfile = fopen(argv[2], "w")) == NULL)
-	    perror("Opening Tarfile");
-	tree = build_tree(argv[3], NULL);
-        /* create archive */
-        if(isverbose){
-            /* use verbose and strict */
-	    archive(argv[2], tree);
-	    print_tree(tree);
-	}else{
-	    archive(argv[2], tree);
-	}
-    }
-    
     /* populates the path array */
     for(i = 0; i < argc-3; i++){
 	paths[i] = argv[i+3];
     }
     
+    if(strstr(argv[1], "c")){
+	/* TODO: figure out what strict should do, if anything */
+	if((tarfile = fopen(argv[2], "w")) == NULL)
+	    perror("Opening Tarfile");
+        /* create archive */
+	/* use verbose and strict */
+	archive(argv[2], paths, i, isverbose);
+    }
+       
     if(strstr(argv[1], "x")){
 	if((tarfile = fopen(argv[2], "r")) == NULL)
 	    perror("Opening Tarfile");

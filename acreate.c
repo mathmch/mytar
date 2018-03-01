@@ -20,11 +20,12 @@ void archive(char *file_name, char *paths[], int elements, int isverbose) {
         return;
     }
     for(i = 0; i < elements; i++){
-	tree = build_tree(paths[i], NULL);
+	if((tree = build_tree(paths[i], NULL)) == NULL)
+	    continue;
 	archive_helper(file, tree);
 	if(isverbose)
 	    print_tree(tree);
-	
+	free_tree(tree);
     }
     memset(buffer, 0, BLOCK_LENGTH);
     fwrite(buffer, 1, BLOCK_LENGTH, file);
