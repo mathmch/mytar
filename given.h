@@ -1,14 +1,10 @@
-//
-//  given.h
-//  mytar-xc
-//
-//  Created by Michael Pangburn on 2/28/18.
-//  Copyright © 2018 Michael Pangburn. All rights reserved.
-//
-
 #ifndef given_h
 #define given_h
 
-#include <stdio.h>
+#include <arpa/inet.h>
 
-#endif /* given_h */
+uint32_t extract_special_int(char *where, int len);
+
+int insert_special_int(char *where, size_t size, int32_t val);
+
+#endif
