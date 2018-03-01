@@ -51,6 +51,7 @@ void extract_file(FILE *tarfile, char *path, int isverbose, int isstrict) {
     } else if (is_symlink(tarfile)) {
         get_linkname(buffer, tarfile);
         symlink(buffer, path);
+        fseek(tarfile, BLOCK_LENGTH, SEEK_CUR);
     } else {
         traverse_path(path, 0);
         if(mode & 0111){
