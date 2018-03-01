@@ -106,7 +106,7 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     #define EXTRA_SPACE (BLOCK_LENGTH - HEADER_LENGTH)
     #define PERMISSION_WIDTH 11 
     #define OWNER_WIDTH 17
-    #define TIME_WIDTH 16
+    #define TIME_WIDTH 17
     int size;
     uid_t uid;
     gid_t gid;
@@ -259,8 +259,10 @@ void find_listings(FILE *tarfile, char *paths[],
     
     get_path(actual_path, tarfile);
     if(elements == 0){
-        list_contents(tarfile, actual_path, isverbose, isstrict);
-        return;
+	while(actual_path[0] != '\0') {
+	    list_contents(tarfile, actual_path, isverbose, isstrict);
+	    get_path(actual_path, tarfile);
+	}
     }
     while(actual_path[0] != '\0') {
 	listed = 0;

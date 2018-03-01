@@ -101,8 +101,12 @@ void find_archives(FILE *tarfile, char *paths[],
     char actual_path[MAX_PATH_LENGTH];
     
     get_path(actual_path, tarfile);
-    if(elements == 0)
-	extract_file(tarfile, actual_path, isverbose, isstrict);
+    if(elements == 0){
+	while(actual_path[0] != '\0'){
+	    extract_file(tarfile, actual_path, isverbose, isstrict);
+	    get_path(actual_path, tarfile);
+	}
+    }
     while(actual_path[0] != '\0') {
         int extracted = 0;
         for (i = 0; i < elements; i++) {
