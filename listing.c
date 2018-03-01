@@ -83,6 +83,7 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     #define PERMISSION_WIDTH 11 
     #define OWNER_WIDTH 17
     #define TIME_WIDTH 17
+
     mode_t mode;
     off_t size;
     time_t time;
@@ -96,17 +97,17 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     char buffer[PATH_MAX];
     int blocks;
 
-    buffer[0] = '\0';
-    /* get permissions */
-    if(validate_header(tarfile, isstrict) != 0){
+    if (validate_header(tarfile, isstrict) != 0) {
         fprintf(stderr, "Invalid Header\n");
         exit(EXIT_FAILURE);
     }
+
+    memset(buffer, 0, PATH_MAX);
     
     mode = get_mode(tarfile);
-    /* get size */
     size = get_size(tarfile);
-    if(isverbose){
+
+    if (isverbose) {
         /* verbose print */
         get_permissions(permissions, mode, tarfile);
 
@@ -137,11 +138,12 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     }
 
     /* go to next header */
-    if(!is_dir(tarfile)){
+    if(is_reg(tarfile)){
         blocks = size_to_blocks(size);
         fseek(tarfile, blocks * BLOCK_LENGTH + BLOCK_LENGTH, SEEK_CUR);
     } else {
-        /* check next entry */
+        /* continue extracting until the prefix of the next file
+         does not contain this directory's path */
         fseek(tarfile, BLOCK_LENGTH, SEEK_CUR);
         get_path(buffer, tarfile);
         while (strncmp(buffer, path, strlen(path)) == 0) {
@@ -155,22 +157,18 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
 
 void find_listings(FILE *tarfile, char *paths[],
 		   int elements, int isverbose, int isstrict){
-    #define MAX_PATH_LENGTH 256
-    #define MAX_FIELD_LENGTH 155
-    int i;
-    int listed;
-    int path_length;
-    char actual_path[MAX_PATH_LENGTH];
+    char actual_path[PATH_MAX];
+    int path_length, listed, i;
     
     get_path(actual_path, tarfile);
     if(elements == 0){
-	while(actual_path[0] != '\0') {
-	    list_contents(tarfile, actual_path, isverbose, isstrict);
-	    get_path(actual_path, tarfile);
-	}
+        while(actual_path[0] != '\0') {
+            list_contents(tarfile, actual_path, isverbose, isstrict);
+            get_path(actual_path, tarfile);
+        }
     }
     while(actual_path[0] != '\0') {
-	listed = 0;
+        listed = 0;
         for (i = 0; i < elements; i++) {
             if (paths[i] == NULL)
                 continue;
@@ -179,17 +177,17 @@ void find_listings(FILE *tarfile, char *paths[],
                 listed++;
                 paths[i] = NULL; /* don't search for this path again */
             } else {
-                /* check if they named a directory without 
-		   putting a '/' at the end */
+                /* check if they named a directory without
+                 putting a '/' at the end */
                 path_length = (int)strlen(actual_path);
                 if (actual_path[path_length - 1] == '/'
                     && strlen(paths[i]) == path_length - 1
                     && strncmp(actual_path, paths[i],
-			       path_length - 1) == 0) {
-                    list_contents(tarfile, actual_path, isverbose, isstrict);
-                    listed++;
-                    paths[i] = NULL; /* don't search for this path again */
-                }
+                               path_length - 1) == 0) {
+                        list_contents(tarfile, actual_path, isverbose, isstrict);
+                        listed++;
+                        paths[i] = NULL; /* don't search for this path again */
+                    }
             }
         }
 
@@ -205,9 +203,8 @@ void find_listings(FILE *tarfile, char *paths[],
         get_path(actual_path, tarfile);
     }
     for(i = 0; i < elements; i++){
-	if(paths[i] != NULL)
-	    printf("Could not list: %s\n", paths[i]);
+        if(paths[i] != NULL)
+            printf("Could not list: %s\n", paths[i]);
     }
-    
 }
 
