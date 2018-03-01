@@ -37,11 +37,17 @@ void *safe_realloc(void *ptr, size_t size, const char *msg) {
 }
 
 /* fread or exit with message on failure */
-void safe_fread(char buffer[], int size, int nmemb, FILE *file) {
-    if (fread(buffer, size, nmemb, file) == 0 && ferror(file)){
+size_t safe_fread(char buffer[], int size, int nmemb, FILE *file) {
+    size_t read;
+    if ((read = fread(buffer, size, nmemb, file)) == 0 && ferror(file)) {
         perror("fread");
         exit(EXIT_FAILURE);
     }
+    return read;
+}
+
+void safe_fwrite(char buffer[], int size, int nmemb, FILE *file) {
+
 }
 
 /* returns a newly malloced copy of the string */
