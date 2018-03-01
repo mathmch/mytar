@@ -146,7 +146,7 @@ void list_contents(FILE* tarfile, char path[], int verbose, int strict) {
     }
     
     /* go to next header */
-    if (!is_dir(tarfile)) {
+    if (is_reg(tarfile)) {
         blocks = size_to_blocks(size);
         /* +1 for header */
         fseek(tarfile, blocks * (BLOCK_LENGTH + 1), SEEK_CUR);
