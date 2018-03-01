@@ -10,14 +10,22 @@
 #include "acreate.h"
 #include "header.h"
 
-void archive(char *file_name, dirnode *tree) {
+void archive(char *file_name, char *paths[], int elements, int isverbose) {
     FILE *file;
+    int i;
+    dirnode *tree;
     char buffer[BLOCK_LENGTH];
     if ((file = fopen(file_name, "w+")) == NULL) {
         /* TODO: handle error here */
         return;
     }
-    archive_helper(file, tree);
+    for(i = 0; i < elements; i++){
+	tree = build_tree(paths[i], NULL);
+	archive_helper(file, tree);
+	if(isverbose)
+	    print_tree(tree);
+	
+    }
     memset(buffer, 0, BLOCK_LENGTH);
     fwrite(buffer, 1, BLOCK_LENGTH, file);
     fwrite(buffer, 1, BLOCK_LENGTH, file);
