@@ -14,6 +14,8 @@ struct dirnode {
 
 dirnode *build_tree(char *path, char *prefix);
 
+dirnode *build_tree_helper(char *path, char *prefix);
+
 void print_tree(dirnode *tree);
 
 void free_tree(dirnode *tree);

@@ -6,8 +6,22 @@
 #include <string.h>
 #include "util.h"
 
-/* build the directory tree from the path */
+/* build the directory tree from the path.
+ * this is a small wrapper around the actual function
+ * for the edge case where the path initially passed
+ * is inside another folder. */
 dirnode *build_tree(char *path, char *prefix) {
+    #define UNIX_PATH_MAX 4096 /* guess on the high side */
+    char original_path[UNIX_PATH_MAX];
+    dirnode *tree;
+    getcwd(original_path, UNIX_PATH_MAX);
+    tree = build_tree_helper(path, prefix);
+    chdir(original_path); /* ensure we end up where we started */
+    return tree;
+}
+
+/* build the directory tree from the path */
+dirnode *build_tree_helper(char *path, char *prefix) {
     #define FN_NAME "build_tree"
     struct stat sb;
     char *new_path;
