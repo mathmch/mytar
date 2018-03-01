@@ -62,6 +62,8 @@ void extract_file(FILE *tarfile, char *path, int isverbose, int isstrict) {
                 perror(path);
         }
         blocks = size_to_blocks(size);
+        /* go to file contents */
+        fseek(tarfile, BLOCK_LENGTH, SEEK_CUR);
         /* writes the file */
         for (i = 0; i < blocks; i++) {
             fread(buffer, 1, BLOCK_LENGTH, tarfile);
