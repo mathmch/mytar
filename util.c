@@ -39,7 +39,7 @@ void *safe_realloc(void *ptr, size_t size, const char *msg) {
 /* fread or exit with message on failure */
 void safe_fread(char buffer[], int size, int nmemb, FILE *file){
     if (fread(buffer, size, nmemb, file) == 0 && ferror(file)){
-	perror("Bad Read");
+    perror("Bad Read");
         exit(EXIT_FAILURE);
     }
       
@@ -93,8 +93,8 @@ int count_occur(char *path, char c){
     int i;
     int count = 0;;
     for(i = 0; path[i] != '\0'; i++){
-	if(path[i] == c)
-	    count++;
+    if(path[i] == c)
+        count++;
     }
     return count;
 }

@@ -72,6 +72,11 @@ int is_symlink(FILE *tarfile) {
 }
 
 /* assume at start of header, resets to start of header */
+int is_reg(FILE *tarfile) {
+    return !(is_dir(tarfile) || is_symlink(tarfile));
+}
+
+/* assume at start of header, resets to start of header */
 void get_path(char buffer[], FILE *tarfile) {
     char name[NAME_LENGTH + 1];
     fseek(tarfile, PREFIX_OFFSET, SEEK_CUR);
