@@ -74,12 +74,15 @@ char *new_copy(char *str) {
 char *concat(char *str1, char *str2, char *str3) {
     /* could use varargs here, but eh... */
     #define STR_COUNT 3
-    char *strings[STR_COUNT] = { str1, str2, str3 };
+    char *strings[STR_COUNT];
     unsigned long lengths[STR_COUNT];
     unsigned long total_length = 0;
-    char *new;
-    char *current;
-    int i;
+    char *new, *current;
+    int i = 0;
+
+    strings[i++] = str1;
+    strings[i++] = str2;
+    strings[i] = str3;
     
     for (i = 0; i < STR_COUNT; i++) {
         unsigned long length = (strings[i] == NULL) ? 0 : strlen(strings[i]);
