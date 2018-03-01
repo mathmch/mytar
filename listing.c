@@ -9,12 +9,12 @@
 #include <sys/stat.h>
 
 /* get the permissions string from the mode */
-void get_permissions(char permissions[], mode_t mode, FILE *tarfile){
+void get_permissions(char permissions[], mode_t mode, FILE *tarfile) {
     int index = 0;
 
     if (is_dir(tarfile))
         permissions[index++] = 'd';
-    else if(is_symlink(tarfile))
+    else if (is_symlink(tarfile))
         permissions[index++] = 'l';
     else
         permissions[index++] = '-';
@@ -60,7 +60,7 @@ void get_owner(uid_t uid, char uname[], gid_t gid, char gname[], char owner[]) {
 }
 
 /* get time string in yyyy:mm:dd hh:mm format */
-void get_time(time_t time, char timestr[]){
+void get_time(time_t time, char timestr[]) {
     struct tm *tm = localtime(&time);
     int year;
     int month;
@@ -78,7 +78,7 @@ void get_time(time_t time, char timestr[]){
 
 
 /* list the contents of a file */
-void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
+void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict) {
     #define EXTRA_SPACE (BLOCK_LENGTH - HEADER_LENGTH)
     #define PERMISSION_WIDTH 11 
     #define OWNER_WIDTH 17
@@ -138,7 +138,7 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     }
 
     /* go to next header */
-    if(is_reg(tarfile)){
+    if (is_reg(tarfile)) {
         blocks = size_to_blocks(size);
         fseek(tarfile, blocks * BLOCK_LENGTH + BLOCK_LENGTH, SEEK_CUR);
     } else {
@@ -149,7 +149,7 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
         while (strncmp(buffer, path, strlen(path)) == 0) {
             list_contents(tarfile, buffer, isverbose, isstrict);
             get_path(buffer, tarfile);
-            if(buffer[0] == '\0')
+            if (buffer[0] == '\0')
                 return;
         }
     }
@@ -163,7 +163,7 @@ void find_listings(FILE *tarfile, char *paths[],
     
     get_path(actual_path, tarfile);
     if (elements == 0) {
-        while(actual_path[0] != '\0') {
+        while (actual_path[0] != '\0') {
             list_contents(tarfile, actual_path, verbose, strict);
             get_path(actual_path, tarfile);
         }

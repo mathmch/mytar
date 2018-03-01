@@ -100,11 +100,11 @@ char *concat(char *str1, char *str2, char *str3) {
     return new;
 }
 
-int count_occur(char *path, char c){
+int count_occur(char *path, char c) {
     int i;
     int count = 0;;
-    for(i = 0; path[i] != '\0'; i++){
-    if(path[i] == c)
+    for (i = 0; path[i] != '\0'; i++) {
+    if (path[i] == c)
         count++;
     }
     return count;

@@ -18,4 +18,4 @@ void print_tree(dirnode *tree);
 
 void free_tree(dirnode *tree);
 
-#endif /* dirnode_h */
+#endif
