@@ -155,19 +155,20 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     }
 }
 
+/* find and list the files matching the given paths */
 void find_listings(FILE *tarfile, char *paths[],
 		   int elements, int verbose, int strict) {
     char actual_path[PATH_MAX];
     int i;
     
     get_path(actual_path, tarfile);
-    if(elements == 0){
+    if (elements == 0) {
         while(actual_path[0] != '\0') {
             list_contents(tarfile, actual_path, verbose, strict);
             get_path(actual_path, tarfile);
         }
     }
-    while(actual_path[0] != '\0') {
+    while (actual_path[0] != '\0') {
         int listed = 0;
         for (i = 0; i < elements; i++) {
             if (paths[i] == NULL)
@@ -185,10 +186,10 @@ void find_listings(FILE *tarfile, char *paths[],
                 int paths_match = strncmp(actual_path, paths[i],
                                           path_length - 1) == 0;
                 if (ends_with_slash && lengths_match && paths_match) {
-                        list_contents(tarfile, actual_path, verbose, strict);
-                        listed++;
-                        paths[i] = NULL; /* don't search for this path again */
-                    }
+                    list_contents(tarfile, actual_path, verbose, strict);
+                    listed++;
+                    paths[i] = NULL; /* don't search for this path again */
+                }
             }
         }
 
