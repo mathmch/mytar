@@ -10,27 +10,21 @@
 #include "acreate.h"
 #include "header.h"
 
-void archive(char *file_name, char *paths[], int elements, int isverbose) {
-    FILE *file;
+void archive(FILE *tarfile, char *paths[], int elements, int isverbose) {
     int i;
     dirnode *tree;
     char buffer[BLOCK_LENGTH];
-    if ((file = fopen(file_name, "w+")) == NULL) {
-        /* TODO: handle error here */
-        return;
-    }
     for(i = 0; i < elements; i++){
 	if((tree = build_tree(paths[i], NULL)) == NULL)
 	    continue;
-	archive_helper(file, tree);
+	archive_helper(tarfile, tree);
 	if(isverbose)
 	    print_tree(tree);
 	free_tree(tree);
     }
     memset(buffer, 0, BLOCK_LENGTH);
-    fwrite(buffer, 1, BLOCK_LENGTH, file);
-    fwrite(buffer, 1, BLOCK_LENGTH, file);
-    fclose(file);
+    fwrite(buffer, 1, BLOCK_LENGTH, tarfile);
+    fwrite(buffer, 1, BLOCK_LENGTH, tarfile);
 }
 
 void archive_helper(FILE *file, dirnode *tree) {

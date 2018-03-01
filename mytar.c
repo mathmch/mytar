@@ -88,7 +88,7 @@ int execute_command(int argc, char *argv[]){
         /* list archive */
         find_listings(tarfile, paths, i, isverbose, isstrict);
     }
-    
+    fclose(tarfile);
     free(paths);
     return 0;
 }
