@@ -24,8 +24,8 @@ void archive(FILE *tarfile, char *paths[], int elements, int isverbose) {
         free_tree(tree);
     }
     memset(buffer, 0, BLOCK_LENGTH);
-    fwrite(buffer, 1, BLOCK_LENGTH, tarfile);
-    fwrite(buffer, 1, BLOCK_LENGTH, tarfile);
+    safe_fwrite(buffer, 1, BLOCK_LENGTH, tarfile);
+    safe_fwrite(buffer, 1, BLOCK_LENGTH, tarfile);
 }
 
 /* recursive helper function to write header and contents of file */
@@ -64,27 +64,27 @@ void write_header(FILE *archive, dirnode *tree) {
 
     /* mode, including only the permission bits */
     sprintf(buffer, "%07o", PERMS(tree->sb.st_mode));
-    fwrite(buffer, 1, MODE_LENGTH, archive);
+    safe_fwrite(buffer, 1, MODE_LENGTH, archive);
 
     /* uid */
     sprintf(buffer, "%07o", (int)tree->sb.st_uid);
-    fwrite(buffer, 1, UID_LENGTH, archive);
+    safe_fwrite(buffer, 1, UID_LENGTH, archive);
 
     /* gid */
     sprintf(buffer, "%07o", tree->sb.st_gid);
-    fwrite(buffer, 1, GID_LENGTH, archive);
+    safe_fwrite(buffer, 1, GID_LENGTH, archive);
 
     /* size */
     sprintf(buffer, "%011o", (unsigned int)tree->sb.st_size);
-    fwrite(buffer, 1, SIZE_LENGTH, archive);
+    safe_fwrite(buffer, 1, SIZE_LENGTH, archive);
 
     /* mtime */
     sprintf(buffer, "%011o", (unsigned int)tree->sb.st_mtime);
-    fwrite(buffer, 1, MTIME_LENGTH, archive);
+    safe_fwrite(buffer, 1, MTIME_LENGTH, archive);
 
     /* chksum */
     memset(buffer, ' ', CHKSUM_LENGTH);
-    fwrite(buffer, 1, CHKSUM_LENGTH, archive);
+    safe_fwrite(buffer, 1, CHKSUM_LENGTH, archive);
 
     /* typeflag */
     if (S_ISDIR(tree->sb.st_mode)) {
@@ -95,7 +95,7 @@ void write_header(FILE *archive, dirnode *tree) {
         /* regular file */
         buffer[0] = '0';
     }
-    fwrite(buffer, 1, TYPEFLAG_LENGTH, archive);
+    safe_fwrite(buffer, 1, TYPEFLAG_LENGTH, archive);
 
     /* linkname */
     if (S_ISLNK(tree->sb.st_mode)) {
@@ -107,10 +107,10 @@ void write_header(FILE *archive, dirnode *tree) {
     write_and_pad(buffer, LINKNAME_LENGTH, archive);
 
     /* magic */
-    fwrite(MAGIC, 1, MAGIC_LENGTH, archive);
+    safe_fwrite(MAGIC, 1, MAGIC_LENGTH, archive);
 
     /* version */
-    fwrite(VERSION, 1, VERSION_LENGTH, archive);
+    safe_fwrite(VERSION, 1, VERSION_LENGTH, archive);
 
     /* uname */
     name = getpwuid(tree->sb.st_uid)->pw_name;
@@ -146,12 +146,12 @@ void write_header(FILE *archive, dirnode *tree) {
     checksum = compute_checksum(archive);
     fseek(archive, CHKSUM_OFFSET, SEEK_CUR);
     sprintf(buffer, "%07o", checksum);
-    fwrite(buffer, 1, CHKSUM_LENGTH, archive);
+    safe_fwrite(buffer, 1, CHKSUM_LENGTH, archive);
 
     /* null padding at end of header block */
     fseek(archive, HEADER_LENGTH - CHKSUM_OFFSET - CHKSUM_LENGTH, SEEK_CUR);
     memset(buffer, 0, BLOCK_LENGTH - HEADER_LENGTH);
-    fwrite(buffer, 1, BLOCK_LENGTH - HEADER_LENGTH, archive);
+    safe_fwrite(buffer, 1, BLOCK_LENGTH - HEADER_LENGTH, archive);
 }
 
 /* split a path into prefix and name based on field length.
@@ -210,9 +210,9 @@ void write_contents(FILE *archive, dirnode *tree) {
 
 void write_and_pad(char *buffer, int num_to_write, FILE *file) {
     int length = (int)strlen(buffer);
-    fwrite(buffer, 1, length, file);
+    safe_fwrite(buffer, 1, length, file);
     if (length < num_to_write) {
         memset(buffer, 0, num_to_write - length);
-        fwrite(buffer, 1, num_to_write - length, file);
+        safe_fwrite(buffer, 1, num_to_write - length, file);
     }
 }

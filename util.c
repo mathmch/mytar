@@ -38,16 +38,21 @@ void *safe_realloc(void *ptr, size_t size, const char *msg) {
 
 /* fread or exit with message on failure */
 size_t safe_fread(char buffer[], int size, int nmemb, FILE *file) {
-    size_t read;
-    if ((read = fread(buffer, size, nmemb, file)) == 0 && ferror(file)) {
+    size_t bytes_read;
+    if ((bytes_read = fread(buffer, size, nmemb, file)) == 0 && ferror(file)) {
         perror("fread");
         exit(EXIT_FAILURE);
     }
-    return read;
+    return bytes_read;
 }
 
-void safe_fwrite(char buffer[], int size, int nmemb, FILE *file) {
-    
+size_t safe_fwrite(char buffer[], int size, int nmemb, FILE *file) {
+    size_t bytes_written;
+    if ((bytes_written = fwrite(buffer, size, nmemb, file)) == 0 && ferror(file)) {
+        perror("fwrite");
+        exit(EXIT_FAILURE);
+    }
+    return bytes_written;
 }
 
 /* returns a newly malloced copy of the string */

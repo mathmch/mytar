@@ -9,6 +9,8 @@ void *safe_realloc(void *ptr, size_t size, const char *msg);
 
 size_t safe_fread(char buffer[], int size, int nmemb, FILE *file);
 
+size_t safe_fwrite(char buffer[], int size, int nmemb, FILE *file);
+
 char *concat(char *str1, char *str2, char *str3);
 
 int count_occur(char *path, char c);
