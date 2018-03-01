@@ -8,8 +8,8 @@ LDFLAGS =
 
 all: mytar
 
-mytar: mytar.o acreate.o aextract.o  dirnode.o util.o header.o
-	$(LD) $(LDFLAGS) -o mytar mytar.o acreate.o aextract.o dirnode.o util.o header.o
+mytar: mytar.o acreate.o aextract.o  dirnode.o util.o header.o listing.o
+	$(LD) $(LDFLAGS) -o mytar mytar.o acreate.o aextract.o dirnode.o util.o header.o listing.o
 
 mytar.o: mytar.c
 	$(CC) $(CCFLAGS) -c -o mytar.o mytar.c
@@ -28,5 +28,9 @@ util.o: util.c
 
 header.o: header.c
 	$(CC) $(CCFLAGS) -c -o header.o header.c
+
+listing.o: listing.c
+	$(CC) $(CCFLAGS) -c -o listing.o listing.c
+
 clean:
-	rm mytar.o aextract.o acreate.o dirnode.o util.o header.o
+	rm mytar.o aextract.o acreate.o dirnode.o util.o header.o listing.o

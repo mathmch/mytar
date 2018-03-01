@@ -5,13 +5,16 @@
  * set the high–order bit of the first byte, then
  * treat the rest of the field as a binary integer
  * in network byte order.
- * I don’t know for sure if it’s a 32 or 64–bit int, but for * this version, we’ll only support 32. (well, 31)
+ * I don’t know for sure if it’s a 32 or 64–bit int,
+ * but for * this version,
+ * we’ll only support 32. (well, 31)
  * returns the integer on success, –1 on failure.
  * In spite of the name of htonl(), it converts int32 t */
 uint32_t extract_special_int(char *where, int len) {
     int32_t val= -1;
     if ( (len >= sizeof(val)) && (where[0] & 0x80)) {
-        /* the top bit is set and we have space * extract the last four bytes */
+        /* the top bit is set and we have space * extract the 
+	   last four bytes */
         val = *(int32_t *)(where+len-sizeof(val));
         val = ntohl(val); /* convert to host byte order */
     }
