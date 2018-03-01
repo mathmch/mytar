@@ -7,6 +7,7 @@
 #include "header.h"
 #include "util.h"
 #include <sys/stat.h>
+#include "listing.h"
 
 void get_permissions(char permissions[], mode_t mode, FILE *tarfile){
     #define TYPE 0
