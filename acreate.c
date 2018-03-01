@@ -103,12 +103,14 @@ void write_header(FILE *archive, dirnode *tree) {
 
     /* uname */
     name = getpwuid(tree->sb.st_uid)->pw_name;
-    buffer[UNAME_LENGTH] = '\0';
+    strcpy(buffer, name);
+    buffer[UNAME_LENGTH] = '\0'; /* truncate if necessary */
     write_and_pad(buffer, UNAME_LENGTH, archive);
 
     /* gname */
     name = getgrgid(tree->sb.st_gid)->gr_name;
-    buffer[GNAME_LENGTH] = '\0';
+    strcpy(buffer, name);
+    buffer[GNAME_LENGTH] = '\0'; /* truncate if necessary */
     write_and_pad(buffer, GNAME_LENGTH, archive);
 
     /* devmajor and devminor */
