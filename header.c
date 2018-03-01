@@ -13,14 +13,14 @@ int validate_header(FILE *tarfile, int strict) {
     int actual_checksum;
     memset(buffer, 0, CHKSUM_LENGTH);
     fseek(tarfile, MAGIC_OFFSET, SEEK_CUR);
-    fread(buffer, 1, MAGIC_LENGTH, tarfile);
+    safe_fread(buffer, 1, MAGIC_LENGTH, tarfile);
     if (strncmp(buffer, MAGIC, magic_strlen) != 0)
         return -1; /* magic does not match */
     if (strict) {
         int version_strlen;
         if (buffer[magic_strlen] != '\0')
             return -1; /* missing null after magic */
-        fread(buffer, 1, VERSION_LENGTH, tarfile);
+        safe_fread(buffer, 1, VERSION_LENGTH, tarfile);
         version_strlen = strlen(VERSION);
         if (strncmp(buffer, VERSION, version_strlen) != 0)
             return -1; /* version does not match */
@@ -29,7 +29,7 @@ int validate_header(FILE *tarfile, int strict) {
 
     /* validate the checksum */
     fseek(tarfile, -MAGIC_LENGTH - MAGIC_OFFSET + CHKSUM_OFFSET, SEEK_CUR);
-    fread(buffer, 1, CHKSUM_LENGTH, tarfile);
+    safe_fread(buffer, 1, CHKSUM_LENGTH, tarfile);
     checksum = (int)strtol(buffer, NULL, 8);
     fseek(tarfile, -CHKSUM_LENGTH - CHKSUM_OFFSET, SEEK_CUR);
     actual_checksum = compute_checksum(tarfile);
@@ -56,7 +56,7 @@ int compute_checksum(FILE *tarfile) {
 /* assume at start of header, resets to start of header */
 int is_dir(FILE *tarfile) {
     char buffer[NAME_LENGTH + 1];
-    fread(buffer, 1, NAME_LENGTH, tarfile);
+    safe_fread(buffer, 1, NAME_LENGTH, tarfile);
     buffer[NAME_LENGTH] = '\0';
     fseek(tarfile, -NAME_LENGTH, SEEK_CUR);
     return buffer[strlen(buffer) - 1] == '/';
@@ -66,7 +66,7 @@ int is_dir(FILE *tarfile) {
 int is_symlink(FILE *tarfile) {
     char linkname_start;
     fseek(tarfile, LINKNAME_OFFSET, SEEK_CUR);
-    fread(&linkname_start, 1, 1, tarfile);
+    safe_fread(&linkname_start, 1, 1, tarfile);
     fseek(tarfile, -LINKNAME_OFFSET - 1, SEEK_CUR);
     return linkname_start != '\0';
 }
@@ -80,12 +80,12 @@ int is_reg(FILE *tarfile) {
 void get_path(char buffer[], FILE *tarfile) {
     char name[NAME_LENGTH + 1];
     fseek(tarfile, PREFIX_OFFSET, SEEK_CUR);
-    fread(buffer, 1, PREFIX_LENGTH, tarfile);
+    safe_fread(buffer, 1, PREFIX_LENGTH, tarfile);
     buffer[PREFIX_LENGTH + 1] = '\0';
     if(buffer[0] != '\0' && buffer[strlen(buffer) - 1] != '/')
         strcat(buffer, "/");
     fseek(tarfile, -PREFIX_OFFSET - PREFIX_LENGTH, SEEK_CUR);
-    fread(name, 1, NAME_LENGTH, tarfile);
+    safe_fread(name, 1, NAME_LENGTH, tarfile);
     name[NAME_LENGTH] = '\0';
     strcat(buffer, name);
     fseek(tarfile, -NAME_LENGTH, SEEK_CUR);
@@ -95,7 +95,7 @@ void get_path(char buffer[], FILE *tarfile) {
 mode_t get_mode(FILE *tarfile) {
     char buffer[MODE_LENGTH];
     fseek(tarfile, MODE_OFFSET, SEEK_CUR);
-    fread(buffer, 1, MODE_LENGTH, tarfile);
+    safe_fread(buffer, 1, MODE_LENGTH, tarfile);
     fseek(tarfile, -MODE_OFFSET - MODE_LENGTH, SEEK_CUR);
     return strtol(buffer, NULL, 8);
 }
@@ -104,7 +104,7 @@ mode_t get_mode(FILE *tarfile) {
 off_t get_size(FILE *tarfile) {
     char buffer[SIZE_LENGTH];
     fseek(tarfile, SIZE_OFFSET, SEEK_CUR);
-    fread(buffer, 1, SIZE_LENGTH, tarfile);
+    safe_fread(buffer, 1, SIZE_LENGTH, tarfile);
     fseek(tarfile, -SIZE_OFFSET - SIZE_LENGTH, SEEK_CUR);
     return strtol(buffer, NULL, 8);
 }
@@ -113,7 +113,7 @@ off_t get_size(FILE *tarfile) {
 time_t get_mtime(FILE *tarfile) {
     char buffer[MTIME_LENGTH];
     fseek(tarfile, MTIME_OFFSET, SEEK_CUR);
-    fread(buffer, 1, MTIME_LENGTH, tarfile);
+    safe_fread(buffer, 1, MTIME_LENGTH, tarfile);
     fseek(tarfile, -MTIME_LENGTH - MTIME_OFFSET, SEEK_CUR);
     return strtol(buffer, NULL, 8);
 }
@@ -121,7 +121,7 @@ time_t get_mtime(FILE *tarfile) {
 /* assume at start of header, resets to start of header */
 void get_linkname(char buffer[], FILE *tarfile) {
     fseek(tarfile, LINKNAME_OFFSET, SEEK_CUR);
-    fread(buffer, 1, LINKNAME_LENGTH, tarfile);
+    safe_fread(buffer, 1, LINKNAME_LENGTH, tarfile);
     fseek(tarfile, -LINKNAME_LENGTH - LINKNAME_OFFSET, SEEK_CUR);
 }
 

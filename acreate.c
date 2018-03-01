@@ -198,7 +198,7 @@ void write_contents(FILE *archive, dirnode *tree) {
         return;
     }
 
-    while ((length = fread(buffer, 1, BLOCK_LENGTH, file)) > 0) {
+    while ((length = safe_fread(buffer, 1, BLOCK_LENGTH, file)) > 0) {
         buffer[length] = '\0';
         write_and_pad(buffer, BLOCK_LENGTH, archive);
     }

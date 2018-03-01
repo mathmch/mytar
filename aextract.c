@@ -60,7 +60,7 @@ void extract_file(FILE *tarfile, char *path, int verbose, int strict) {
         fseek(tarfile, BLOCK_LENGTH, SEEK_CUR);
         blocks = size_to_blocks(size);
         for (i = 0; i < blocks; i++) {
-            fread(buffer, 1, BLOCK_LENGTH, tarfile);
+            safe_fread(buffer, 1, BLOCK_LENGTH, tarfile);
             if (i == blocks - 1) /* last block */
                 write(fd, buffer, size % BLOCK_LENGTH);
             else
