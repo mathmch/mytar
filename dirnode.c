@@ -31,7 +31,6 @@ dirnode *build_tree(char *path, char *prefix) {
     tree->child_count = 0;
 
     if (S_ISDIR(sb.st_mode)) {
-
         DIR *dir = opendir(path);
         struct dirent *entry;
         chdir(path);
@@ -46,7 +45,12 @@ dirnode *build_tree(char *path, char *prefix) {
             tree->children[tree->child_count-1] = build_tree(entry->d_name,
                                                              new_path);
         }
+
+        /* go back up after recursing over all children */
         chdir("..");
+
+        /* a directory has 0 size */
+        tree->sb.st_size = 0;
 
         /* directory, so add a slash to the path name end after recursing
          (if it's not already there) */

@@ -43,7 +43,6 @@ void write_header(FILE *archive, dirnode *tree) {
     char *name;
     char buffer[HEADER_LENGTH], prefix[PREFIX_LENGTH];
     int checksum;
-    int i;
 
     memset(buffer, 0, HEADER_LENGTH);
 
@@ -54,23 +53,23 @@ void write_header(FILE *archive, dirnode *tree) {
 
     /* mode, including only the permission bits */
     sprintf(buffer, "%07o", MODE_PERMS(tree->sb.st_mode));
-    write_and_pad(buffer, MODE_LENGTH, archive);
+    fwrite(buffer, 1, MODE_LENGTH, archive);
 
     /* uid */
     sprintf(buffer, "%07o", (int)tree->sb.st_uid);
-    write_and_pad(buffer, UID_LENGTH, archive);
+    fwrite(buffer, 1, UID_LENGTH, archive);
 
     /* gid */
     sprintf(buffer, "%07o", tree->sb.st_gid);
-    write_and_pad(buffer, GID_LENGTH, archive);
+    fwrite(buffer, 1, GID_LENGTH, archive);
 
     /* size */
     sprintf(buffer, "%011o", (unsigned int)tree->sb.st_size);
-    write_and_pad(buffer, SIZE_LENGTH, archive);
+    fwrite(buffer, 1, SIZE_LENGTH, archive);
 
     /* mtime */
     sprintf(buffer, "%011o", (unsigned int)tree->sb.st_mtime);
-    write_and_pad(buffer, MTIME_LENGTH, archive);
+    fwrite(buffer, 1, MTIME_LENGTH, archive);
 
     /* chksum */
     memset(buffer, ' ', CHKSUM_LENGTH);
@@ -90,15 +89,11 @@ void write_header(FILE *archive, dirnode *tree) {
     /* linkname */
     if (S_ISLNK(tree->sb.st_mode)) {
         length = (int)readlink(tree->path_name, buffer, LINKNAME_LENGTH);
-        fwrite(buffer, 1, length, archive);
-        if (length < LINKNAME_LENGTH) {
-            memset(buffer, 0, LINKNAME_LENGTH - length);
-            fwrite(buffer, 1, LINKNAME_LENGTH - length, archive);
-        }
+        buffer[length] = '\0';
     } else {
-        memset(buffer, 0, LINKNAME_LENGTH);
-        fwrite(buffer, 1, LINKNAME_LENGTH, archive);
+        buffer[0] = '\0';
     }
+    write_and_pad(buffer, LINKNAME_LENGTH, archive);
 
     /* magic */
     fwrite(MAGIC, 1, MAGIC_LENGTH, archive);
@@ -108,32 +103,18 @@ void write_header(FILE *archive, dirnode *tree) {
 
     /* uname */
     name = getpwuid(tree->sb.st_uid)->pw_name;
-    length = (int)strlen(name);
-    if (length > UNAME_LENGTH - 1) {
-        fwrite(name, 1, UNAME_LENGTH - 1, archive);
-        buffer[0] = '\0';
-        fwrite(buffer, 1, 1, archive);
-    } else {
-        fwrite(name, 1, length, archive);
-        memset(buffer, 0, UNAME_LENGTH - length);
-        fwrite(buffer, 1, UNAME_LENGTH - length, archive);
-    }
+    buffer[UNAME_LENGTH] = '\0';
+    write_and_pad(buffer, UNAME_LENGTH, archive);
 
     /* gname */
     name = getgrgid(tree->sb.st_gid)->gr_name;
-    length = (int)strlen(name);
-    if (length > UNAME_LENGTH - 1) {
-        fwrite(name, 1, UNAME_LENGTH - 1, archive);
-        buffer[0] = '\0';
-        fwrite(buffer, 1, 1, archive);
-    } else {
-        fwrite(name, 1, length, archive);
-        memset(buffer, 0, UNAME_LENGTH - length);
-        fwrite(buffer, 1, UNAME_LENGTH - length, archive);
-    }
+    buffer[GNAME_LENGTH] = '\0';
+    write_and_pad(buffer, GNAME_LENGTH, archive);
 
     /* devmajor and devminor */
     if (S_ISCHR(tree->sb.st_mode) || S_ISBLK(tree->sb.st_mode)) {
+        /* we don't support these file types, so this won't
+         actually get called, but... */
         sprintf(buffer, "%07o", major(tree->sb.st_dev));
         write_and_pad(buffer, DEVMAJOR_LENGTH, archive);
         sprintf(buffer, "%07o", minor(tree->sb.st_dev));
@@ -149,11 +130,8 @@ void write_header(FILE *archive, dirnode *tree) {
 
     /* checksum calculation and write */
     fseek(archive, -HEADER_LENGTH, SEEK_CUR);
-    fread(buffer, 1, HEADER_LENGTH, archive);
-    for (checksum = 0, i = 0; i < HEADER_LENGTH; i++) {
-        checksum += (unsigned char)buffer[i];
-    }
-    fseek(archive, -(HEADER_LENGTH - CHKSUM_OFFSET), SEEK_CUR);
+    checksum = compute_checksum(archive);
+    fseek(archive, CHKSUM_OFFSET, SEEK_CUR);
     sprintf(buffer, "%07o", checksum);
     fwrite(buffer, 1, CHKSUM_LENGTH, archive);
 
