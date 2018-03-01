@@ -8,34 +8,29 @@
 #include "util.h"
 #include <sys/stat.h>
 
+/* get the permissions string from the mode */
 void get_permissions(char permissions[], mode_t mode, FILE *tarfile){
-    #define TYPE 0
-    #define U_R 1
-    #define U_W 2
-    #define U_X 3
-    #define G_R 4
-    #define G_W 5
-    #define G_X 6
-    #define O_R 7
-    #define O_W 8
-    #define O_X 9
-    if(is_dir(tarfile))
-	permissions[TYPE] = 'd';
+    int index = 0;
+
+    if (is_dir(tarfile))
+        permissions[index++] = 'd';
     else if(is_symlink(tarfile))
-	permissions[TYPE] = 'l';
+        permissions[index++] = 'l';
     else
-        permissions[TYPE] = '-';
-    permissions[U_R] = (mode & S_IRUSR) ? 'r' : '-';
-    permissions[U_W] = (mode & S_IWUSR) ? 'w' : '-';
-    permissions[U_X] = (mode & S_IXUSR) ? 'x' : '-';
-    permissions[G_R] = (mode & S_IRGRP) ? 'r' : '-';
-    permissions[G_W] = (mode & S_IWGRP) ? 'w' : '-';
-    permissions[G_X] = (mode & S_IXGRP) ? 'x' : '-';
-    permissions[O_R] = (mode & S_IROTH) ? 'r' : '-';
-    permissions[O_W] = (mode & S_IWOTH) ? 'w' : '-';
-    permissions[O_X] = (mode & S_IXOTH) ? 'x' : '-';
-    permissions[10] = '\0';
+        permissions[index++] = '-';
+
+    permissions[index++] = (mode & S_IRUSR) ? 'r' : '-';
+    permissions[index++] = (mode & S_IWUSR) ? 'w' : '-';
+    permissions[index++] = (mode & S_IXUSR) ? 'x' : '-';
+    permissions[index++] = (mode & S_IRGRP) ? 'r' : '-';
+    permissions[index++] = (mode & S_IWGRP) ? 'w' : '-';
+    permissions[index++] = (mode & S_IXGRP) ? 'x' : '-';
+    permissions[index++] = (mode & S_IROTH) ? 'r' : '-';
+    permissions[index++] = (mode & S_IWOTH) ? 'w' : '-';
+    permissions[index++] = (mode & S_IXOTH) ? 'x' : '-';
+    permissions[index] = '\0';
 }
+
 /* figure out how to handled name lengths */
 void get_owner(uid_t uid, char uname[], gid_t gid, char gname[], char owner[]){
     #define OWNER_WIDTH 17
@@ -44,21 +39,21 @@ void get_owner(uid_t uid, char uname[], gid_t gid, char gname[], char owner[]){
     char buffer[USER_NAME_LENGTH];
     owner[0] = '\0';
     if(uname[0] == '\0'){
-	sprintf(buffer, "%d", uid);
-	strcat(owner, buffer);
+        sprintf(buffer, "%d", uid);
+        strcat(owner, buffer);
     }
     else{
-	snprintf(buffer, MAX_NAME_LENGTH, "%s", uname);
-	strcat(owner, buffer);
+        snprintf(buffer, MAX_NAME_LENGTH, "%s", uname);
+        strcat(owner, buffer);
     }
     strcat(owner, "/");
     if(gname[0] == '\0'){
-	sprintf(buffer, "%d", gid);
-	strcat(owner, buffer);
+        sprintf(buffer, "%d", gid);
+        strcat(owner, buffer);
     }
     else{
-	snprintf(buffer, MAX_NAME_LENGTH, "%s", gname);
-	strcat(owner, buffer);
+        snprintf(buffer, MAX_NAME_LENGTH, "%s", gname);
+        strcat(owner, buffer);
     }
 }
 
