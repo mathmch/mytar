@@ -6,5 +6,6 @@ void extract_file(FILE *tarfile, char *path, int isverbose, int isstrict);
 void find_archives(FILE *tarfile, char *paths[], int elements,
 		   int isverbose, int isstrict);
 
+void traverse_path(char *path, int is_dir);
 
 #endif
