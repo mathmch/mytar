@@ -14,12 +14,14 @@ dirnode *build_tree(char *path, char *prefix) {
 
     if (lstat(path, &sb)) {
         perror(path);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
     if (prefix == NULL) {
-        new_path = path;
+        /* dup so we can be confident when we free later */
+        new_path = strdup(path);
     } else if (prefix[strlen(prefix) - 1] != '/') {
+        /* (concat requires freeing too) */
         new_path = concat(prefix, "/", path);
     } else {
         new_path = concat(prefix, path, NULL);
@@ -58,6 +60,7 @@ dirnode *build_tree(char *path, char *prefix) {
             strcat(tree->path_name, "/");
     }
 
+    free(new_path);
     return tree;
 }
 
@@ -74,4 +77,11 @@ void print_tree(dirnode *tree) {
     for (i = 0; i < tree->child_count; i++) {
         print_tree(tree->children[i]);
     }
+}
+
+void free_tree(dirnode *tree) {
+    int i;
+    for (i = 0; i < tree->child_count; i++)
+        free_tree(tree->children[i]);
+    free(tree);
 }
