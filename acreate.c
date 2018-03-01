@@ -10,7 +10,8 @@
 #include "acreate.h"
 #include "header.h"
 
-void archive(FILE *tarfile, char *paths[], int elements, int isverbose) {
+/* archive the files at the paths into the tarfile */
+void archive(FILE *tarfile, char *paths[], int elements, int verbose) {
     int i;
     dirnode *tree;
     char buffer[BLOCK_LENGTH];
@@ -19,7 +20,7 @@ void archive(FILE *tarfile, char *paths[], int elements, int isverbose) {
         if ((tree = build_tree(paths[i], NULL)) == NULL)
             continue; /* invalid path, build_tree will print error */
         archive_helper(tarfile, tree);
-        if (isverbose)
+        if (verbose)
             print_tree(tree);
         free_tree(tree);
     }

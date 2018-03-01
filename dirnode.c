@@ -6,8 +6,9 @@
 #include <string.h>
 #include "util.h"
 
+/* build the directory tree from the path */
 dirnode *build_tree(char *path, char *prefix) {
-#define FN_NAME "build_tree"
+    #define FN_NAME "build_tree"
     struct stat sb;
     char *new_path;
     dirnode *tree = safe_malloc(sizeof(struct dirnode), FN_NAME);
@@ -64,8 +65,7 @@ dirnode *build_tree(char *path, char *prefix) {
     return tree;
 }
 
-/* only problem is this function puts / at the end of every path, even if
- final spot is a file, not a dir. */
+/* recursively print the file names in the tree */
 void print_tree(dirnode *tree) {
     int i;
     if (!S_ISREG(tree->sb.st_mode) &&
@@ -79,6 +79,7 @@ void print_tree(dirnode *tree) {
     }
 }
 
+/* recursively free the tree */
 void free_tree(dirnode *tree) {
     int i;
     for (i = 0; i < tree->child_count; i++)
