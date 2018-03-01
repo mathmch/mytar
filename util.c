@@ -74,7 +74,7 @@ char *new_copy(char *str) {
 char *concat(char *str1, char *str2, char *str3) {
     /* could use varargs here, but eh... */
     #define STR_COUNT 3
-    char *strings[] = { str1, str2, str3 };
+    char *strings[STR_COUNT] = { str1, str2, str3 };
     unsigned long lengths[STR_COUNT];
     unsigned long total_length = 0;
     char *new;
@@ -100,14 +100,16 @@ char *concat(char *str1, char *str2, char *str3) {
     return new;
 }
 
+/* count the occurrences of a character in the string */
 int count_occur(char *path, char c) {
     int i;
-    int count = 0;;
+    int count;
+    if (path == NULL)
+        return 0;
+    count = 0;
     for (i = 0; path[i] != '\0'; i++) {
-    if (path[i] == c)
-        count++;
+        if (path[i] == c)
+            count++;
     }
     return count;
 }
-
-
