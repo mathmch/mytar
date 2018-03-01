@@ -32,7 +32,7 @@ void validate_command(int argc, char *argv[]){
         fprintf(stderr, "Usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
         exit(EXIT_FAILURE);
     }
-    length = strlen(argv[1]);
+    length = (int)strlen(argv[1]);
     if(!strstr(argv[1], "f")){
 	fprintf(stderr, "Usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
         exit(EXIT_FAILURE);
@@ -59,36 +59,35 @@ int execute_command(int argc, char *argv[]){
     isstrict = (strstr(argv[1], "S") != 0) ? STRICT: NON_STRICT;
     /* populates the path array */
     for (i = 0; i < argc-3; i++){
-	paths[i] = argv[i+3];
+        paths[i] = argv[i+3];
     }
     
     if (strstr(argv[1], "c")){
-	if ((tarfile = fopen(argv[2], "w+")) == NULL){
-	    perror(argv[2]);
-	    exit(EXIT_FAILURE);
-	}
+        if ((tarfile = fopen(argv[2], "w+")) == NULL){
+            perror(argv[2]);
+            exit(EXIT_FAILURE);
+        }
         /* create archive */
-	archive(tarfile, paths, i, isverbose);
-    }
-       
-    if (strstr(argv[1], "x")){
-	if ((tarfile = fopen(argv[2], "r")) == NULL){
-	    perror(argv[2]);
-	    exit(EXIT_FAILURE);
-	}
+        archive(tarfile, paths, i, isverbose);
+        fclose(tarfile);
+    } else if (strstr(argv[1], "x")){
+        if ((tarfile = fopen(argv[2], "r")) == NULL){
+            perror(argv[2]);
+            exit(EXIT_FAILURE);
+        }
         /* extract archive */
-	find_archives(tarfile, paths, i, isverbose, isstrict);
-    }
-
-    if (strstr(argv[1], "t")){
-	if ((tarfile = fopen(argv[2], "r")) == NULL){
-	    perror(argv[2]);
-	    exit(EXIT_FAILURE);
-	}
+        find_archives(tarfile, paths, i, isverbose, isstrict);
+        fclose(tarfile);
+    } else if (strstr(argv[1], "t")){
+        if ((tarfile = fopen(argv[2], "r")) == NULL){
+            perror(argv[2]);
+            exit(EXIT_FAILURE);
+        }
         /* list archive */
         find_listings(tarfile, paths, i, isverbose, isstrict);
+        fclose(tarfile);
     }
-    fclose(tarfile);
+
     free(paths);
     return 0;
 }
