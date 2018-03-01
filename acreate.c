@@ -38,13 +38,8 @@ void archive_helper(FILE *file, dirnode *tree) {
     }
 
     write_header(file, tree);
-    fseek(file, -BLOCK_LENGTH, SEEK_CUR);
-    if (is_reg(file)) {
-        fseek(file, BLOCK_LENGTH, SEEK_CUR);
+    if (S_ISREG(tree->sb.st_mode))
         write_contents(file, tree);
-    } else {
-        fseek(file, BLOCK_LENGTH, SEEK_CUR);
-    }
 
     for (i = 0; i < tree->child_count; i++)
         archive_helper(file, tree->children[i]);
