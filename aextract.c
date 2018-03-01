@@ -91,10 +91,9 @@ void extract_file(FILE *tarfile, char *path, int verbose, int strict) {
     }
 }
 
-/* searches for archives to extract. If elements is 0, extract all 
+/* searches for archives to extract. if elements is 0, extract all.
  * read path of each header, compare against given paths
  * if archived file is directory, extract everything inside of it */
-/* 1 for verbose/strick on, 0 otherwise */
 void find_archives(FILE *tarfile, char *paths[],
 		   int elements, int verbose, int strict) {
     char actual_path[PATH_MAX];
@@ -115,7 +114,7 @@ void find_archives(FILE *tarfile, char *paths[],
             if (paths[i] == NULL)
                 continue;
             if (strcmp(actual_path, paths[i]) == 0) {
-                /* found the path to extract */
+                /* found a path to extract */
                 extract_file(tarfile, paths[i], verbose, strict);
                 extracted++;
                 paths[i] = NULL; /* don't search for this path again */

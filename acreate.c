@@ -23,6 +23,7 @@ void archive(FILE *tarfile, char *paths[], int elements, int isverbose) {
             print_tree(tree);
         free_tree(tree);
     }
+
     memset(buffer, 0, BLOCK_LENGTH);
     safe_fwrite(buffer, 1, BLOCK_LENGTH, tarfile);
     safe_fwrite(buffer, 1, BLOCK_LENGTH, tarfile);
