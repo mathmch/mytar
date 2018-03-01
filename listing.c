@@ -114,19 +114,19 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
 	get_permissions(permissions, mode, tarfile);
 	
 	fseek(tarfile, UID_OFFSET, SEEK_CUR);
-	fread(owner, 1, UID_LENGTH, tarfile);
+	safe_fread(owner, 1, UID_LENGTH, tarfile);
 	uid = strtol(owner, NULL, 8);
-	fread(owner, 1, GID_LENGTH, tarfile);
+	safe_fread(owner, 1, GID_LENGTH, tarfile);
 	gid = strtol(owner, NULL, 8);
 	fseek(tarfile, -GID_OFFSET - GID_LENGTH, SEEK_CUR);
 	fseek(tarfile, UNAME_OFFSET, SEEK_CUR);
-	fread(uname, 1, UNAME_LENGTH, tarfile);
-	fread(gname, 1, GNAME_LENGTH, tarfile);
+	safe_fread(uname, 1, UNAME_LENGTH, tarfile);
+	safe_fread(gname, 1, GNAME_LENGTH, tarfile);
 	fseek(tarfile, -GNAME_LENGTH - GNAME_OFFSET, SEEK_CUR);
 	get_owner(uid, uname, gid, gname, owner);
 
 	fseek(tarfile, MTIME_OFFSET, SEEK_CUR);
-	fread(buffer, 1, MTIME_LENGTH, tarfile);
+	safe_fread(buffer, 1, MTIME_LENGTH, tarfile);
 	time = strtol(buffer, NULL, 8);
 	get_time(time, timestr);
 
