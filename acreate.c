@@ -27,9 +27,8 @@ void archive(FILE *file, char *paths[], int elements, int isverbose) {
 
     /* write two empty blocks after archiving */
     memset(buffer, 0, BLOCK_LENGTH);
-    fwrite(buffer, 1, BLOCK_LENGTH, file);
-    fwrite(buffer, 1, BLOCK_LENGTH, file);
-    fclose(file);
+    fwrite(buffer, 1, BLOCK_LENGTH, tarfile);
+    fwrite(buffer, 1, BLOCK_LENGTH, tarfile);
 }
 
 /* recursive helper function to write header and contents of file */

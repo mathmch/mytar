@@ -20,9 +20,9 @@ void get_permissions(char permissions[], mode_t mode, FILE *tarfile){
     #define O_R 7
     #define O_W 8
     #define O_X 9
-    if(is_dir(tarfile))
+    if (is_dir(tarfile))
 	permissions[TYPE] = 'd';
-    else if(is_symlink(tarfile))
+    else if (is_symlink(tarfile))
 	permissions[TYPE] = 'l';
     else
         permissions[TYPE] = '-';
@@ -37,14 +37,15 @@ void get_permissions(char permissions[], mode_t mode, FILE *tarfile){
     permissions[O_X] = (mode & S_IXOTH) ? 'x' : '-';
     permissions[10] = '\0';
 }
-/* figure out how to handled name lengths */
+
+
 void get_owner(uid_t uid, char uname[], gid_t gid, char gname[], char owner[]){
     #define OWNER_WIDTH 17
     #define MAX_NAME_LENGTH 8
     #define USER_NAME_LENGTH 32
     char buffer[USER_NAME_LENGTH];
     owner[0] = '\0';
-    if(uname[0] == '\0'){
+    if (uname[0] == '\0'){
 	sprintf(buffer, "%d", uid);
 	strcat(owner, buffer);
     }
@@ -53,7 +54,7 @@ void get_owner(uid_t uid, char uname[], gid_t gid, char gname[], char owner[]){
 	strcat(owner, buffer);
     }
     strcat(owner, "/");
-    if(gname[0] == '\0'){
+    if (gname[0] == '\0'){
 	sprintf(buffer, "%d", gid);
 	strcat(owner, buffer);
     }
@@ -63,7 +64,7 @@ void get_owner(uid_t uid, char uname[], gid_t gid, char gname[], char owner[]){
     }
 }
 
-
+/* converts into yyyy-mm-dd hh:mm format */
 void get_time(time_t time, char timestr[]){
     struct tm *tm = localtime(&time);
     int year;
@@ -81,11 +82,11 @@ void get_time(time_t time, char timestr[]){
 }
 
 
-/* mode = 0 for standard, verbose otherwise */
+/* mode = 0 for standard, verbose otherwise 
+ * lists the filename for simple or
+ * ls -l style output for verbose */
 void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
-    #define EXTRA_SPACE (BLOCK_LENGTH - HEADER_LENGTH)
     #define PERMISSION_WIDTH 11 
-    #define OWNER_WIDTH 17
     #define TIME_WIDTH 17
     int size;
     uid_t uid;
@@ -101,15 +102,14 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
     mode_t mode;
     buffer[0] = '\0';
     /* get permissions */
-    if(validate_header(tarfile, isstrict) != 0){
+    if (validate_header(tarfile, isstrict) != 0){
 	fprintf(stderr, "Invalid Header\n");
 	exit(EXIT_FAILURE);
     }
     
     mode = get_mode(tarfile);
-    /* get size */
     size = get_size(tarfile);
-    if(isverbose){
+    if (isverbose){
 	/* verbose print */
 	get_permissions(permissions, mode, tarfile);
 	
@@ -138,8 +138,9 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
 	/* standard print */
 	puts(path);
     }
+    
     /* go to next header */
-    if(!is_dir(tarfile)){
+    if (!is_dir(tarfile)){
 	blocks = size_to_blocks(size);
         fseek(tarfile, blocks * BLOCK_LENGTH + BLOCK_LENGTH, SEEK_CUR);
     }
@@ -151,7 +152,7 @@ void list_contents(FILE* tarfile, char path[], int isverbose, int isstrict){
         while (strncmp(buffer, path, strlen(path)) == 0) {
             list_contents(tarfile, buffer, isverbose, isstrict);
             get_path(buffer, tarfile);
-	    if(buffer[0] == '\0')
+	    if (buffer[0] == '\0')
 		return;
         }
     }
@@ -167,13 +168,13 @@ void find_listings(FILE *tarfile, char *paths[],
     char actual_path[MAX_PATH_LENGTH];
     
     get_path(actual_path, tarfile);
-    if(elements == 0){
-	while(actual_path[0] != '\0') {
+    if (elements == 0){
+	while (actual_path[0] != '\0') {
 	    list_contents(tarfile, actual_path, isverbose, isstrict);
 	    get_path(actual_path, tarfile);
 	}
     }
-    while(actual_path[0] != '\0') {
+    while (actual_path[0] != '\0') {
 	listed = 0;
         for (i = 0; i < elements; i++) {
             if (paths[i] == NULL)
@@ -208,6 +209,7 @@ void find_listings(FILE *tarfile, char *paths[],
 
         get_path(actual_path, tarfile);
     }
+    /* check if any paths could not be listed */
     for(i = 0; i < elements; i++){
 	if(paths[i] != NULL)
 	    printf("Could not list: %s\n", paths[i]);

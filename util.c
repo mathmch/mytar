@@ -36,6 +36,14 @@ void *safe_realloc(void *ptr, size_t size, const char *msg) {
     return new;
 }
 
+/* fread or exit with message on failure */
+void safe_fread(char buffer[], int size, int nmemb, FILE *file){
+    if (fread(buffer, size, nmemb, file) == 0 && ferror(file)){
+	perror("Bad Read");
+        exit(EXIT_FAILURE);
+    }
+      
+}
 /* returns a newly malloced copy of the string */
 char *new_copy(char *str) {
     unsigned long length;
@@ -90,3 +98,5 @@ int count_occur(char *path, char c){
     }
     return count;
 }
+
+
