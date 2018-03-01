@@ -58,33 +58,37 @@ int execute_command(int argc, char *argv[]){
     isverbose = (strstr(argv[1], "v") != 0) ? VERBOSE : NON_VERBOSE;
     isstrict = (strstr(argv[1], "S") != 0) ? STRICT: NON_STRICT;
     /* populates the path array */
-    for(i = 0; i < argc-3; i++){
+    for (i = 0; i < argc-3; i++){
 	paths[i] = argv[i+3];
     }
     
-    if(strstr(argv[1], "c")){
-	/* TODO: figure out what strict should do, if anything */
-	if((tarfile = fopen(argv[2], "w")) == NULL)
-	    perror("Opening Tarfile");
+    if (strstr(argv[1], "c")){
+	if ((tarfile = fopen(argv[2], "w+")) == NULL){
+	    perror(argv[2]);
+	    exit(EXIT_FAILURE);
+	}
         /* create archive */
-	/* use verbose and strict */
-	archive(argv[2], paths, i, isverbose);
+	archive(tarfile, paths, i, isverbose);
     }
        
-    if(strstr(argv[1], "x")){
-	if((tarfile = fopen(argv[2], "r")) == NULL)
-	    perror("Opening Tarfile");
-	
+    if (strstr(argv[1], "x")){
+	if ((tarfile = fopen(argv[2], "r")) == NULL){
+	    perror(argv[2]);
+	    exit(EXIT_FAILURE);
+	}
         /* extract archive */
 	find_archives(tarfile, paths, i, isverbose, isstrict);
     }
 
-    if(strstr(argv[1], "t")){
-	if((tarfile = fopen(argv[2], "r")) == NULL)
-	    perror("Opening Tarfile");
+    if (strstr(argv[1], "t")){
+	if ((tarfile = fopen(argv[2], "r")) == NULL){
+	    perror(argv[2]);
+	    exit(EXIT_FAILURE);
+	}
         /* list archive */
         find_listings(tarfile, paths, i, isverbose, isstrict);
     }
+    
     free(paths);
     return 0;
 }
